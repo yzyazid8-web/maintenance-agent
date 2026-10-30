@@ -1,0 +1,22 @@
+# Ne pas embarquer ces éléments dans l'image Docker -> image plus légère et sûre.
+.git/
+.github/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# Artefacts d'expériences (lourds, inutiles en prod) : l'app ne lit que models/.
+mlruns/
+mlartifacts/
+
+# Dev / tests / notebooks : pas nécessaires dans l'app servie.
+tests/
+notebooks/
+*.md
+.env
+.gitignore

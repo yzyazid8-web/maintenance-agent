@@ -1,0 +1,60 @@
+name: CI
+
+# Déclencheurs : à chaque push sur main et à chaque pull request vers main.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # 1) Qualité : lint + format + tests. Casser tôt, casser petit.
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Format check (ruff)
+        run: ruff format --check .
+
+      - name: Tests (pytest)
+        run: pytest -q
+
+  # 2) Build Docker : ne tourne que si "quality" passe. Détecte un Dockerfile cassé avant la prod.
+  docker-build:
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image (smoke test)
+        run: docker build -t maintenance-agent:ci .
+
+  # 3) Déploiement HF Spaces (OPTIONNEL) : à activer une fois le Space créé.
+  #    Prérequis : secret GitHub `HF_TOKEN` (token write HF) + remplacer <user>/<space>.
+  #
+  # deploy:
+  #   needs: docker-build
+  #   if: github.ref == 'refs/heads/main'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+  #     - name: Push to Hugging Face Spaces
+  #       env:
+  #         HF_TOKEN: ${{ secrets.HF_TOKEN }}
+  #       run: git push https://user:$HF_TOKEN@huggingface.co/spaces/<user>/<space> main --force

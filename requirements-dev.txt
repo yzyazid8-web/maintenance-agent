@@ -1,0 +1,19 @@
+# Dépendances DEV (hors ligne) : entraînement, évaluation, tests, qualité de code.
+# Installées en CI et sur ta machine, PAS dans l'image de prod.
+
+-r requirements.txt
+
+# --- Entraînement / tracking (MLOps) ---
+optuna>=3.6
+mlflow>=2.14
+
+# --- Monitoring de drift (option à la lib maison PSI/KS) ---
+evidently>=0.4
+
+# --- Évaluation de l'agent (groundedness / LLM-as-judge) ---
+ragas>=0.2
+# deepeval>=1.0   # alternative à RAGAS, décommente si tu préfères
+
+# --- Qualité & tests ---
+ruff>=0.6
+pytest>=8.0
