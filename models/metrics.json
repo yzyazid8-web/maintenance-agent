@@ -1,0 +1,19 @@
+{
+  "baseline": {
+    "pr_auc": 0.4297030345248936,
+    "roc_auc": 0.9385047497259774
+  },
+  "xgboost": {
+    "pr_auc": 0.8998174357754564,
+    "roc_auc": 0.9819068931920595
+  },
+  "best_params": {
+    "n_estimators": 253,
+    "max_depth": 4,
+    "learning_rate": 0.011662890273931383,
+    "subsample": 0.7301321323053057,
+    "colsample_bytree": 0.7554709158757928,
+    "min_child_weight": 3,
+    "reg_lambda": 2.0651425578959257
+  }
+}
