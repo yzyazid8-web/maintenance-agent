@@ -1,4 +1,4 @@
-# --- Python ---
+# Python 
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -6,12 +6,12 @@ __pycache__/
 build/
 dist/
 
-# --- Environnements virtuels ---
+# Environnements virtuels   
 .venv/
 venv/
 env/
 
-# --- Secrets / config locale ---
+# Secrets / config locale 
 .env
 
 # --- MLflow / artefacts d'expériences (lourds) ---
@@ -30,4 +30,3 @@ Thumbs.db
 .idea/
 .vscode/
 
-# NB : models/ et data/ ne sont PAS ignorés -> requis pour le déploiement de l'app.

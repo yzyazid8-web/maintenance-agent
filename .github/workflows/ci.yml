@@ -1,6 +1,6 @@
 name: CI
 
-# Déclencheurs : à chaque push sur main et à chaque pull request vers main.
+# Déclencheurs : à chaque push sur main et à chaque pull request vers main
 on:
   push:
     branches: [main]
@@ -8,7 +8,7 @@ on:
     branches: [main]
 
 jobs:
-  # 1) Qualité : lint + format + tests. Casser tôt, casser petit.
+  # 1 Qualité : lint + format + tests. Casser tot, casser petit.
   quality:
     runs-on: ubuntu-latest
     steps:
@@ -34,7 +34,7 @@ jobs:
       - name: Tests (pytest)
         run: pytest -q
 
-  # 2) Build Docker : ne tourne que si "quality" passe. Détecte un Dockerfile cassé avant la prod.
+  # 2 Build Docker : ne tourne que si "quality" passe. Détecte un Dockerfile cassé avant la prod.
   docker-build:
     needs: quality
     runs-on: ubuntu-latest
@@ -43,8 +43,7 @@ jobs:
       - name: Build image (smoke test)
         run: docker build -t maintenance-agent:ci .
 
-  # 3) Déploiement HF Spaces (OPTIONNEL) : à activer une fois le Space créé.
-  #    Prérequis : secret GitHub `HF_TOKEN` (token write HF) + remplacer <user>/<space>.
+  # 3 Déploiement HF Spaces 
   #
   # deploy:
   #   needs: docker-build
