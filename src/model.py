@@ -8,9 +8,10 @@ import json
 import joblib
 import mlflow
 import optuna
+import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score, roc_auc_score
-from sklearn.model_selection import StratifiedKFold, cross_val_score
+from sklearn.model_selection import StratifiedKFold, cross_val_predict, cross_val_score
 from xgboost import XGBClassifier
 
 from src import config
@@ -80,6 +81,16 @@ def train_xgboost(X_train, y_train, X_test, y_test, n_trials: int = 30):
     return pipe, _evaluate(pipe, X_test, y_test), study.best_params, float(study.best_value)
 
 
+def _oof_scores(df, best_params) -> pd.DataFrame:
+    """Risque out-of-fold sur tout le dataset"""
+    X = df.drop(columns=[config.TARGET])
+    y = df[config.TARGET]
+    pipe = build_pipeline(_xgb({**best_params, "n_jobs": 1}, _scale_pos_weight(y)), scale=False)
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=config.SEED)
+    oof = cross_val_predict(pipe, X, y, cv=cv, method="predict_proba", n_jobs=-1)[:, 1]
+    return pd.DataFrame({"risk": oof}, index=df.index)
+
+
 def run(n_trials: int = 30) -> dict:
     """Entraîne baseline + XGBoost, logge dans MLflow, sauvegarde le pipeline et les métriques."""
     df = load_data()
@@ -104,6 +115,11 @@ def run(n_trials: int = 30) -> dict:
     joblib.dump(pipe, config.MODELS_DIR / "pipeline.joblib")
     results = {"baseline": base_metrics, "xgboost": xgb_metrics, "best_params": best_params}
     (config.MODELS_DIR / "metrics.json").write_text(json.dumps(results, indent=2))
+
+    # Risque out-of-fold (hors-échantillon) 
+    _oof_scores(df, best_params).to_csv(
+        config.MODELS_DIR / "oof_scores.csv", index_label="machine_id"
+    )
     return results
 
 

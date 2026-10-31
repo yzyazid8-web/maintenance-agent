@@ -42,7 +42,7 @@ def test_graph_built():
     assert kg.graph.number_of_nodes() > 5  # 5 modes + causes + actions
 
 
-# GraphRAG (embedder factice : vecteurs de comptage de mots-clés, sans réseau) 
+# GraphRAG (embedder factice : vecteurs de comptage de mots-clés, sans réseau)
 
 _VOCAB = ["usure", "outil", "couple", "temperature", "vitesse", "puissance", "refroidissement"]
 

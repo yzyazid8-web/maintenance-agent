@@ -49,9 +49,15 @@ def _():
 
 
 @app.cell
-def _(df, pipe):
+def _(df):
+    import pandas as _pd
+
+    from src.config import MODELS_DIR as _MODELS_DIR
+
     X = df.drop(columns=["machine_failure"])
-    scored = df.assign(risk=pipe.predict_proba(X)[:, 1])
+    # Risque affiché = prédictions out-of-fold (hors-échantillon), pas un score sur les données vues.
+    _oof = _pd.read_csv(_MODELS_DIR / "oof_scores.csv", index_col="machine_id")
+    scored = df.assign(risk=_oof["risk"].to_numpy())
     return X, scored
 
 
@@ -104,7 +110,7 @@ def _(mo):
             prompts=[
                 "À quoi sert cette application ?",
                 "Quelles sont les 5 machines les plus à risque ?",
-                "Diagnostique la machine 7593 et propose des actions.",
+                "Diagnostique la machine la plus à risque et propose des actions.",
                 "Y a-t-il une dérive des données à sévérité 1 ?",
             ],
         )

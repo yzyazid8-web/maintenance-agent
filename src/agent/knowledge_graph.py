@@ -118,7 +118,7 @@ class KnowledgeGraph:
             }
         return {"modes": modes, "details": [self.describe_mode(m) for m in modes]}
 
-    # GraphRAG (récupération sémantique + parcours multi-sauts) 
+    # GraphRAG (récupération sémantique + parcours multi-sauts)
 
     @property
     def _embed(self) -> Embedder:

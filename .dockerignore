@@ -9,9 +9,12 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 
-# Artefacts d'expériences
+# Artefacts d'expériences / état local
 mlruns/
 mlartifacts/
+mlflow.db
+__marimo__/
+agent_memory/
 
 # Dev / tests / notebooks
 tests/

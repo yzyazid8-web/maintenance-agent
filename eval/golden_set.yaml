@@ -16,14 +16,14 @@
 - question: Quel est le risque de panne de la machine 42 ?
   expected_tool: predict_risk
 
-- question: Pourquoi la machine 7593 est-elle à risque ?
+- question: Pourquoi la machine 4729 est-elle à risque ?
   expected_tool: explain_prediction
 
-- question: Quel mode de panne physique pour la machine 7593 ?
+- question: Quel mode de panne physique pour la machine 4729 ?
   expected_tool: diagnose_mode
 
-- question: Quelles actions correctives pour la machine 7593 ?
+- question: Quelles actions correctives pour la machine 4729 ?
   expected_tool: recommend_actions
 
-- question: Si on baisse le couple de la machine 7593 à 30, que devient le risque ?
+- question: Si on baisse le couple de la machine 4729 à 30, que devient le risque ?
   expected_tool: whatif

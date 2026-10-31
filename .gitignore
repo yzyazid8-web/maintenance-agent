@@ -17,6 +17,10 @@ env/
 # --- MLflow / artefacts d'expériences (lourds) ---
 mlruns/
 mlartifacts/
+mlflow.db
+
+# --- État de session marimo (régénéré à chaque lancement) ---
+__marimo__/
 
 # --- Mémoire épisodique de l'agent (base locale chromadb) ---
 agent_memory/

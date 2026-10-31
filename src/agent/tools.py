@@ -27,12 +27,14 @@ class Deps:
 
 
 def build_deps() -> Deps:
-    """Charge le pipeline, les métriques et score toutes les machines"""
+    """Charge le pipeline, les métriques et le risque out-of-fold (hors-échantillon)."""
     pipe = joblib.load(config.MODELS_DIR / "pipeline.joblib")
     metrics = json.loads((config.MODELS_DIR / "metrics.json").read_text())
     df = load_data()
     X = df.drop(columns=[config.TARGET])
-    scored = df.assign(risk=pipe.predict_proba(X)[:, 1])
+    # Risque affiché = prédictions out-of-fold 
+    oof = pd.read_csv(config.MODELS_DIR / "oof_scores.csv", index_col="machine_id")
+    scored = df.assign(risk=oof["risk"].to_numpy())
     return Deps(
         pipe=pipe,
         X=X,
@@ -78,6 +80,8 @@ def whatif(deps: Deps, machine_id: int, overrides: dict) -> dict:
     Tolère les noms SHAP ('num__torque_nm') ; n'applique que les colonnes connues.
     """
     row = deps.X.loc[[machine_id]].copy()
+    # before/after avec le mme modèle de service 
+    before = float(deps.pipe.predict_proba(row)[:, 1][0])
     applied = {}
     for key, value in overrides.items():
         col = _clean(key)
@@ -86,7 +90,7 @@ def whatif(deps: Deps, machine_id: int, overrides: dict) -> dict:
             applied[col] = value
     after = float(deps.pipe.predict_proba(row)[:, 1][0])
     return {
-        "risk_before": predict_risk(deps, machine_id),
+        "risk_before": round(before, 4),
         "risk_after": round(after, 4),
         "applied": applied,
     }
