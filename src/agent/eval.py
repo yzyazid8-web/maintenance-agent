@@ -27,16 +27,30 @@ def extract_tool_calls(messages) -> list[str]:
     return calls
 
 
+def extract_tool_trace(messages) -> list[dict]:
+    """Trace (preuves) : appels d'outils ET leurs résultats, pour que le juge puisse vérifier."""
+    trace = []
+    for message in messages:
+        for part in getattr(message, "parts", []):
+            kind = getattr(part, "part_kind", None)
+            if kind == "tool-call" or type(part).__name__ == "ToolCallPart":
+                trace.append({"appel": part.tool_name, "args": str(getattr(part, "args", ""))})
+            elif kind == "tool-return" or type(part).__name__ == "ToolReturnPart":
+                trace.append({"resultat_de": part.tool_name, "valeur": str(getattr(part, "content", ""))})
+    return trace
+
+
 class GroundednessScore(BaseModel):
     score: int = Field(ge=1, le=5, description="1 = affirmations inventées, 5 = entièrement étayé")
     justification: str
 
 
 JUDGE_PROMPT = (
-    "Tu es un évaluateur rigoureux. On te donne une QUESTION, la liste des OUTILS appelés par "
-    "un assistant, et sa RÉPONSE. Note de 1 à 5 si la réponse est ANCRÉE : chaque affirmation "
-    "factuelle ou chiffrée doit découler des outils appelés, sans rien inventer. "
-    "5 = tout est étayé ; 1 = affirmations non étayées."
+    "Tu es un évaluateur rigoureux. On te donne une QUESTION, la TRACE des outils appelés par "
+    "un assistant AVEC leurs résultats (les preuves), et sa RÉPONSE. Note de 1 à 5 si la réponse "
+    "est ANCRÉE : chaque affirmation factuelle ou chiffrée doit correspondre aux résultats des "
+    "outils dans la trace, sans rien inventer. 5 = tout est étayé par la trace ; 1 = affirmations "
+    "non étayées ou contradictoires avec la trace."
 )
 
 
@@ -48,8 +62,8 @@ def build_judge():
     return Agent(build_model(), output_type=GroundednessScore, system_prompt=JUDGE_PROMPT)
 
 
-def _judge(judge_agent, question: str, answer: str, tools_used: list[str]) -> GroundednessScore:
-    prompt = f"QUESTION:\n{question}\n\nOUTILS APPELÉS: {tools_used}\n\nRÉPONSE:\n{answer}"
+def _judge(judge_agent, question: str, answer: str, trace: list[dict]) -> GroundednessScore:
+    prompt = f"QUESTION:\n{question}\n\nTRACE DES OUTILS (preuves):\n{trace}\n\nRÉPONSE:\n{answer}"
     return judge_agent.run_sync(prompt).output
 
 
@@ -85,8 +99,10 @@ def evaluate(pause: float = 2.0) -> list[dict]:
         print(f"[{i}] {question[:55]}...")
         try:
             res = _retry(lambda: agent.run_sync(question, deps=deps))
-            calls = extract_tool_calls(res.all_messages())
-            score = _retry(lambda: _judge(judge_agent, question, res.output, calls)).score
+            msgs = res.all_messages()
+            calls = extract_tool_calls(msgs)
+            trace = extract_tool_trace(msgs)
+            score = _retry(lambda: _judge(judge_agent, question, res.output, trace)).score
             tool_ok = item["expected_tool"] in calls
         except Exception as exc:  # une question qui échoue ne casse pas tout le run
             print(f"    erreur : {type(exc).__name__}")

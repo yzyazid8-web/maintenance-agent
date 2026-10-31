@@ -2,7 +2,7 @@
 
 from types import SimpleNamespace
 
-from src.agent.eval import extract_tool_calls, load_golden_set
+from src.agent.eval import extract_tool_calls, extract_tool_trace, load_golden_set
 
 
 def test_golden_set_loads():
@@ -21,3 +21,14 @@ def test_extract_tool_calls_keeps_only_calls():
         ]
     )
     assert extract_tool_calls([msg]) == ["predict_risk", "explain_prediction"]
+
+
+def test_extract_tool_trace_includes_results():
+    msg = SimpleNamespace(
+        parts=[
+            SimpleNamespace(part_kind="tool-call", tool_name="predict_risk", args={"machine_id": 7}),
+            SimpleNamespace(part_kind="tool-return", tool_name="predict_risk", content=0.42),
+        ]
+    )
+    trace = extract_tool_trace([msg])
+    assert any(t.get("resultat_de") == "predict_risk" and "0.42" in t["valeur"] for t in trace)
