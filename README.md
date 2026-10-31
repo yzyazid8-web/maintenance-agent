@@ -13,9 +13,9 @@
 
 ---
 
-## 🎯 L'idée du projet (le point central)
+## 🎯 L'idée du projet
 
-Le cœur de ce projet **n'est pas le modèle XGBoost** — celui-ci est solide, mais il joue le rôle
+Le cœur de ce projet **n'est pas le modèle de prévision 'XGBoost' ** , mais il joue le rôle
 de **« moteur »**. Le vrai sujet est de **transformer un modèle ML en produit réellement utilisable**,
 en **greffant un agent IA directement dans le tableau de bord marimo**.
 
@@ -28,9 +28,9 @@ monitoring), sans rien inventer.
 
 ---
 
-## 👤 Pour un recruteur (en 30 secondes)
+## 
 
-Ce projet démontre, de bout en bout :
+Ce projet, de bout en bout :
 
 - **IA agentique / LLM** : agent **ReAct** à outils (Pydantic AI), **GraphRAG** sur un knowledge
   graph de modes de panne, **mémoire** épisodique, **guardrails**, et **évaluation** (LLM-as-judge).
@@ -44,7 +44,7 @@ l'agent appelle le bon outil dans **100 %** des cas évalués.
 
 ---
 
-## 🏭 Le problème métier
+## 🏭 Le problème 
 
 En maintenance industrielle, on veut **anticiper les pannes** pour intervenir *avant* la casse.
 Ce projet, à partir de mesures machine (couple, vitesse, usure outil, températures) :
