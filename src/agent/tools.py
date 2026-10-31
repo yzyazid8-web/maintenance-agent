@@ -1,4 +1,4 @@
-"""Outils de l'agent : fonctions pures opérant sur le modèle et les données via Deps."""
+"""Outils de l'agent : fonctions pures opérant sur le modèle et les données via Deps"""
 
 import json
 from dataclasses import dataclass
@@ -9,6 +9,7 @@ from sklearn.pipeline import Pipeline
 
 from src import config
 from src.agent.knowledge_graph import KnowledgeGraph
+from src.agent.memory import EpisodicMemory
 from src.data import load_data
 from src.explain import explain_row, global_importance
 
@@ -22,6 +23,7 @@ class Deps:
     scored: pd.DataFrame  # données + colonne `risk`
     metrics: dict
     kg: KnowledgeGraph  # graphe FMEA (modes -> causes / actions)
+    memory: EpisodicMemory  # mémoire 
 
 
 def build_deps() -> Deps:
@@ -31,7 +33,14 @@ def build_deps() -> Deps:
     df = load_data()
     X = df.drop(columns=[config.TARGET])
     scored = df.assign(risk=pipe.predict_proba(X)[:, 1])
-    return Deps(pipe=pipe, X=X, scored=scored, metrics=metrics, kg=KnowledgeGraph())
+    return Deps(
+        pipe=pipe,
+        X=X,
+        scored=scored,
+        metrics=metrics,
+        kg=KnowledgeGraph(),
+        memory=EpisodicMemory(),
+    )
 
 
 def _clean(name: str) -> str:

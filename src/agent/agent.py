@@ -15,6 +15,8 @@ SYSTEM_PROMPT = (
     "Pour la CAUSE physique d'une panne et les ACTIONS correctives, appuie-toi sur "
     "diagnose_mode, recommend_actions et explain_mode (ancrés dans un graphe FMEA) : "
     "ne propose jamais une action qui ne provient pas du graphe. "
+    "Tu peux mémoriser un diagnostic avec save_note et retrouver des diagnostics passés "
+    "avec recall_memory (utile pour comparer à des cas antérieurs). "
     "Si la demande sort du périmètre maintenance / modèle, dis-le simplement."
 )
 
@@ -92,6 +94,16 @@ def build_agent() -> Agent:
     def explain_mode(ctx: RunContext[Deps], mode: str) -> dict:
         """Décrit un mode de panne (TWF, HDF, PWF, OSF, RNF) : cause, signature, actions"""
         return ctx.deps.kg.describe_mode(mode.upper())
+
+    @agent.tool
+    def save_note(ctx: RunContext[Deps], text: str) -> dict:
+        """Mémorise un diagnostic ou une observation pour s'en souvenir plus tard"""
+        return {"saved": True, "id": ctx.deps.memory.remember(text)}
+
+    @agent.tool
+    def recall_memory(ctx: RunContext[Deps], query: str, k: int = 3) -> list[dict]:
+        """Retrouve des diagnostics / observations passés liés à la requête."""
+        return ctx.deps.memory.recall(query, k)
 
     return agent
 

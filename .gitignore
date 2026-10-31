@@ -18,6 +18,9 @@ env/
 mlruns/
 mlartifacts/
 
+# --- Mémoire épisodique de l'agent (base locale chromadb) ---
+agent_memory/
+
 # --- Caches outils ---
 .pytest_cache/
 .ruff_cache/
