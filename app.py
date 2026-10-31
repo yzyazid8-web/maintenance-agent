@@ -1,7 +1,7 @@
 import marimo
 
 __generated_with = "0.9.0"
-app = marimo.App(width="medium")
+app = marimo.App(width="medium", app_title="Maintenance prédictive")
 
 
 @app.cell
@@ -51,9 +51,35 @@ def _(mo):
         """
         # 🔧 Maintenance prédictive — tableau de bord
 
-        Risque de panne par machine (XGBoost), avec explicabilité SHAP.
-        *L'agent IA viendra se greffer ici au prochain jalon.*
+        Prédiction du risque de panne de machines-outils (XGBoost), avec explicabilité SHAP,
+        diagnostic des modes de panne (FMEA) et surveillance de la dérive des données.
+        L'assistant IA est dans le panneau de gauche.
         """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.accordion(
+        {
+            "❓ À quoi sert ce tableau de bord ?": mo.md(
+                "Il prédit le **risque de panne** de chaque machine (modèle XGBoost, dataset AI4I 2020) "
+                "pour aider à **prioriser la maintenance**. Les décisions sont **explicables** (SHAP) "
+                "et les données **surveillées** (dérive)."
+            ),
+            "📊 Comment lire les sections ?": mo.md(
+                "- **KPIs** : taille du parc, taux de panne, performance du modèle (PR-AUC, ROC-AUC).\n"
+                "- **Machines à risque** : liste triée selon le *seuil de risque* (curseur).\n"
+                "- **Importance SHAP globale** : les variables qui pèsent le plus dans les prédictions.\n"
+                "- **Inspecteur** : pourquoi *une* machine précise est à risque (SHAP local).\n"
+                "- **Supervision (MLOps)** : simulation de dérive des données + réentraînement."
+            ),
+            "🤖 L'assistant (panneau de gauche)": mo.md(
+                "Un agent IA répond sur l'application, les machines, les causes de panne et les actions "
+                "correctives — en interrogeant directement le modèle et le graphe FMEA (aucune réponse inventée)."
+            ),
+        }
     )
     return
 
@@ -79,7 +105,7 @@ def _(mo):
             "_Indisponible : configure un backend LLM (GROQ_API_KEY, ou LLM_BACKEND=ollama)._\n\n"
             f"`{_e}`"
         )
-    mo.sidebar(_out, width="360px")
+    mo.sidebar(_out, width="440px")
     return
 
 

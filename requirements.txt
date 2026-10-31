@@ -24,3 +24,9 @@ chromadb>=0.5
 # --- Knowledge Graph / GraphRAG ---
 networkx>=3.2
 pyyaml>=6.0
+
+# --- Visualisation (importée directement par app.py) ---
+matplotlib>=3.8
+
+# --- Détection de dérive (Wasserstein) ---
+scipy>=1.11
