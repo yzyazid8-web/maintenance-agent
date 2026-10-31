@@ -2,9 +2,11 @@
 
 from pydantic_ai import Agent, ModelRetry, RunContext
 
+from src import config
 from src.agent import tools
 from src.agent.llm import build_model
 from src.agent.tools import Deps, build_deps
+from src.drift import drift_report, simulate_drift
 
 SYSTEM_PROMPT = (
     "Tu es un assistant de maintenance prédictive industrielle (dataset AI4I 2020). "
@@ -17,6 +19,7 @@ SYSTEM_PROMPT = (
     "ne propose jamais une action qui ne provient pas du graphe. "
     "Tu peux mémoriser un diagnostic avec save_note et retrouver des diagnostics passés "
     "avec recall_memory (utile pour comparer à des cas antérieurs). "
+    "Pour la dérive des données (data drift), utilise check_drift. "
     "Si la demande sort du périmètre maintenance / modèle, dis-le simplement."
 )
 
@@ -104,6 +107,16 @@ def build_agent() -> Agent:
     def recall_memory(ctx: RunContext[Deps], query: str, k: int = 3) -> list[dict]:
         """Retrouve des diagnostics / observations passés liés à la requête."""
         return ctx.deps.memory.recall(query, k)
+
+    @agent.tool
+    def check_drift(ctx: RunContext[Deps], severity: float = 1.0) -> dict:
+        """Évalue la dérive des données à une sévérité donnée (0 = aucune) : statut par variable + AUC globale"""
+        if not 0 <= severity <= 5:
+            raise ModelRetry("severity doit être entre 0 et 5 (0 = aucune dérive)")
+        current = simulate_drift(ctx.deps.X, severity)
+        report = drift_report(ctx.deps.X, current, config.NUMERIC_FEATURES)
+        report["severity"] = severity
+        return report
 
     return agent
 

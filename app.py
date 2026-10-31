@@ -177,5 +177,96 @@ def _(C_PANNE, C_SAIN, MUTED, X, explain_row, machine, mo, pipe, plt, scored):
     return
 
 
+@app.cell
+def _():
+    import pandas as pd
+
+    from src.config import NUMERIC_FEATURES
+    from src.drift import drift_report, simulate_drift
+
+    return NUMERIC_FEATURES, drift_report, pd, simulate_drift
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        """
+        ## 🩺 Supervision (MLOps) — dérive des données & réentraînement
+
+        Le batch de "production" est **simulé** (dérive covariable) pour démontrer la surveillance.
+        """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    severity = mo.ui.slider(0.0, 3.0, value=1.0, step=0.5, label="Sévérité de la dérive simulée")
+    run_drift = mo.ui.run_button(label="Analyser la dérive")
+    mo.hstack([severity, run_drift], justify="start", gap=1.5)
+    return run_drift, severity
+
+
+@app.cell
+def _(NUMERIC_FEATURES, X, drift_report, mo, pd, run_drift, severity, simulate_drift):
+    if not run_drift.value:
+        _out = mo.md("_Règle la sévérité puis clique « Analyser la dérive »._")
+    else:
+        _report = drift_report(X, simulate_drift(X, severity.value), NUMERIC_FEATURES)
+        _auc = _report["domain_classifier_auc"]
+        _verdict = "🔴 forte" if _auc > 0.75 else "🟡 modérée" if _auc > 0.6 else "🟢 faible"
+        _out = mo.vstack(
+            [
+                mo.md(f"**Dérive globale (AUC domain classifier) : {_auc:.2f} → {_verdict}**"),
+                mo.ui.table(pd.DataFrame(_report["per_feature"]), page_size=5),
+            ]
+        )
+    _out
+    return
+
+
+@app.cell
+def _(C_PANNE, C_SAIN, X, plt, run_drift, severity, simulate_drift):
+    if not run_drift.value:
+        _out = None
+    else:
+        _current = simulate_drift(X, severity.value)
+        _fig, _axes = plt.subplots(1, 2, figsize=(10, 3.2))
+        for _a, _f in zip(_axes, ["tool_wear_min", "torque_nm"]):
+            _a.hist(X[_f], bins=40, alpha=0.6, color=C_SAIN, label="référence")
+            _a.hist(_current[_f], bins=40, alpha=0.6, color=C_PANNE, label="production (dérivé)")
+            _a.set_title(_f, fontsize=9)
+            _a.grid(axis="x", visible=False)
+            _a.legend(fontsize=7)
+        _fig.suptitle("Distributions : référence vs batch dérivé", y=1.04)
+        _fig.tight_layout()
+        _out = _fig
+    _out
+    return
+
+
+@app.cell
+def _(mo):
+    run_retrain = mo.ui.run_button(label="Réentraîner le modèle (n_trials réduit)")
+    mo.vstack([mo.md("### Réentraînement à la demande"), run_retrain])
+    return (run_retrain,)
+
+
+@app.cell
+def _(mo, run_retrain):
+    if not run_retrain.value:
+        _out = mo.md("_Clique pour relancer l'entraînement (≈ 15-30 s) et régénérer les artefacts._")
+    else:
+        from src.model import run as run_training
+
+        _xgb = run_training(n_trials=10)["xgboost"]
+        _out = mo.md(
+            f"✅ Réentraînement terminé — nouvelle **PR-AUC = {_xgb['pr_auc']:.3f}** "
+            f"(ROC-AUC {_xgb['roc_auc']:.3f}).\n\n_Recharge l'app pour servir le nouveau modèle._"
+        )
+    _out
+    return
+
+
 if __name__ == "__main__":
     app.run()
