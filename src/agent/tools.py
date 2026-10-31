@@ -8,6 +8,7 @@ import pandas as pd
 from sklearn.pipeline import Pipeline
 
 from src import config
+from src.agent.knowledge_graph import KnowledgeGraph
 from src.data import load_data
 from src.explain import explain_row, global_importance
 
@@ -20,6 +21,7 @@ class Deps:
     X: pd.DataFrame  # features (sans la cible)
     scored: pd.DataFrame  # données + colonne `risk`
     metrics: dict
+    kg: KnowledgeGraph  # graphe FMEA (modes -> causes / actions)
 
 
 def build_deps() -> Deps:
@@ -29,7 +31,7 @@ def build_deps() -> Deps:
     df = load_data()
     X = df.drop(columns=[config.TARGET])
     scored = df.assign(risk=pipe.predict_proba(X)[:, 1])
-    return Deps(pipe=pipe, X=X, scored=scored, metrics=metrics)
+    return Deps(pipe=pipe, X=X, scored=scored, metrics=metrics, kg=KnowledgeGraph())
 
 
 def _clean(name: str) -> str:

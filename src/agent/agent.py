@@ -12,6 +12,9 @@ SYSTEM_PROMPT = (
     "N'avance AUCUN chiffre de toi-même : utilise les outils pour les métriques, les risques, "
     "les explications SHAP, les scénarios what-if et les statistiques. "
     "Une machine est identifiée par son index entier. "
+    "Pour la CAUSE physique d'une panne et les ACTIONS correctives, appuie-toi sur "
+    "diagnose_mode, recommend_actions et explain_mode (ancrés dans un graphe FMEA) : "
+    "ne propose jamais une action qui ne provient pas du graphe. "
     "Si la demande sort du périmètre maintenance / modèle, dis-le simplement."
 )
 
@@ -69,6 +72,26 @@ def build_agent() -> Agent:
     def dataset_summary(ctx: RunContext[Deps]) -> dict:
         """Volumétrie et taux de panne du parc"""
         return tools.dataset_summary(ctx.deps)
+
+    @agent.tool
+    def diagnose_mode(ctx: RunContext[Deps], machine_id: int) -> dict:
+        """Mode de panne physique probable d'une machine (graphe FMEA), via ses variables"""
+        _require_machine(ctx.deps, machine_id)
+        return ctx.deps.kg.diagnose(ctx.deps.X.loc[machine_id].to_dict())
+
+    @agent.tool
+    def recommend_actions(ctx: RunContext[Deps], machine_id: int) -> dict:
+        """Actions correctives ANCRÉES dans le graphe FMEA pour une machine."""
+        _require_machine(ctx.deps, machine_id)
+        modes = ctx.deps.kg.link_modes(ctx.deps.X.loc[machine_id].to_dict())
+        if not modes:
+            return {"modes": [], "actions": {}, "message": "Aucun mode déclenché : pas d'action ciblée."}
+        return {"modes": modes, "actions": {m: ctx.deps.kg.actions_for(m) for m in modes}}
+
+    @agent.tool
+    def explain_mode(ctx: RunContext[Deps], mode: str) -> dict:
+        """Décrit un mode de panne (TWF, HDF, PWF, OSF, RNF) : cause, signature, actions"""
+        return ctx.deps.kg.describe_mode(mode.upper())
 
     return agent
 

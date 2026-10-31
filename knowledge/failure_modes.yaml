@@ -1,0 +1,68 @@
+# Ontologie FMEA des modes de panne AI4I 2020
+# Seuils issus de la documentation du dataset 
+# Sert de base au Knowledge Graph : mode -> causes / signature / actions correctives.
+
+TWF:
+  label: Usure de l'outil (Tool Wear Failure)
+  description: L'outil se dégrade puis casse après un temps d'usure critique.
+  signature: usure de l'outil comprise entre 200 et 240 min
+  causes:
+    - Usure cumulée de l'outil
+  thresholds:
+    tool_wear_low: 200
+    tool_wear_high: 240
+  actions:
+    - Remplacer l'outil
+    - Planifier un changement d'outil préventif avant 200 min d'usure
+
+HDF:
+  label: Dissipation thermique (Heat Dissipation Failure)
+  description: La chaleur n'est plus évacuée (faible écart de température et vitesse basse).
+  signature: écart de température (procédé - air) < 8,6 K ET vitesse < 1380 rpm
+  causes:
+    - Écart de température trop faible
+    - Vitesse de rotation trop basse
+  thresholds:
+    delta_t_max: 8.6
+    speed_max: 1380
+  actions:
+    - Vérifier et nettoyer le système de refroidissement
+    - Rétablir une vitesse de rotation adéquate
+
+PWF:
+  label: Puissance (Power Failure)
+  description: La puissance mécanique sort de la plage admissible (trop basse ou trop haute).
+  signature: puissance < 3500 W ou > 9000 W
+  causes:
+    - Puissance hors de la plage 3500-9000 W
+  thresholds:
+    power_min: 3500
+    power_max: 9000
+  actions:
+    - Ajuster couple et vitesse pour revenir dans la plage de puissance
+    - Contrôler l'alimentation et la transmission
+
+OSF:
+  label: Surcharge (Overstrain Failure)
+  description: Contrainte mécanique excessive (produit usure x couple au-dessus du seuil).
+  signature: usure x couple > seuil dépendant du type (L 11000, M 12000, H 13000)
+  causes:
+    - Produit usure x couple trop élevé
+  thresholds:
+    osf_by_type:
+      L: 11000
+      M: 12000
+      H: 13000
+  actions:
+    - Réduire la charge (couple) ou remplacer l'outil usé
+    - Adapter les paramètres de coupe au type de produit
+
+RNF:
+  label: Panne aléatoire (Random Failure)
+  description: Défaillance aléatoire (~0,1 %) sans signature physique ; non prédictible.
+  signature: aucune (bruit aléatoire)
+  causes:
+    - Aléa
+  thresholds: {}
+  actions:
+    - Pas d'action ciblée ; surveillance générale du parc
