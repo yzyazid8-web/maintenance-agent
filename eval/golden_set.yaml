@@ -1,0 +1,29 @@
+# Jeu de référence pour l'évaluation de l'agent.
+# Chaque question attend l'appel d'un outil précis (vérifié automatiquement).
+
+- question: Combien de machines dans le parc et quel est le taux de panne ?
+  expected_tool: dataset_summary
+
+- question: Quelles sont les performances du modèle ?
+  expected_tool: model_metrics
+
+- question: Quels facteurs influencent le plus les pannes ?
+  expected_tool: feature_importance
+
+- question: Quelles sont les 5 machines les plus à risque ?
+  expected_tool: top_risk_machines
+
+- question: Quel est le risque de panne de la machine 42 ?
+  expected_tool: predict_risk
+
+- question: Pourquoi la machine 7593 est-elle à risque ?
+  expected_tool: explain_prediction
+
+- question: Quel mode de panne physique pour la machine 7593 ?
+  expected_tool: diagnose_mode
+
+- question: Quelles actions correctives pour la machine 7593 ?
+  expected_tool: recommend_actions
+
+- question: Si on baisse le couple de la machine 7593 à 30, que devient le risque ?
+  expected_tool: whatif
