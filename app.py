@@ -66,19 +66,20 @@ def _(mo):
         _assistant = mo.ui.chat(
             build_chat_model(),
             prompts=[
-                "Quelles sont les performances du modèle ?",
+                "À quoi sert cette application ?",
                 "Quelles sont les 5 machines les plus à risque ?",
-                "Pourquoi la machine 0 est-elle à risque ?",
+                "Diagnostique la machine 7593 et propose des actions.",
+                "Y a-t-il une dérive des données à sévérité 1 ?",
             ],
         )
-        _out = mo.vstack([mo.md("### 🤖 Assistant maintenance"), _assistant])
+        _out = mo.vstack([mo.md("### 🤖 Assistant"), _assistant])
     except Exception as _e:  # pas de backend LLM : le dashboard reste utilisable
         _out = mo.md(
-            "### 🤖 Assistant maintenance\n"
+            "### 🤖 Assistant\n"
             "_Indisponible : configure un backend LLM (GROQ_API_KEY, ou LLM_BACKEND=ollama)._\n\n"
             f"`{_e}`"
         )
-    _out
+    mo.sidebar(_out, width="360px")
     return
 
 
