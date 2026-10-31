@@ -11,6 +11,9 @@ extend-exclude = ["notebooks"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+# E501 : la longueur de ligne est gérée par le formateur (ruff format).
+# B018 : les sorties de cellules marimo (dernière expression) sont intentionnelles.
+ignore = ["E501", "B018"]
 
 [tool.pytest.ini_options]
 addopts = "-q"

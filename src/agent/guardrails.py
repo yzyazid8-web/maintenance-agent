@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 MAX_INPUT_CHARS = 2000
 
-# Motifs d'injection de prompt 
+# Motifs d'injection de prompt
 _INJECTION_PATTERNS = [
     r"ignore[rz]?\s+(tes|les|toutes?\s+tes|vos|previous|all|your)",
     r"oublie[rz]?\s+(tes|les|toute|vos)",

@@ -24,13 +24,23 @@ def _():
 
     INK, MUTED, GRID, SURFACE = "#0b0b0b", "#898781", "#e1e0d9", "#fcfcfb"
     C_SAIN, C_PANNE = "#2a78d6", "#eb6834"
-    plt.rcParams.update({
-        "figure.facecolor": SURFACE, "axes.facecolor": SURFACE,
-        "axes.edgecolor": MUTED, "axes.labelcolor": INK, "text.color": INK,
-        "xtick.color": MUTED, "ytick.color": MUTED,
-        "axes.grid": True, "grid.color": GRID, "grid.linewidth": 0.6,
-        "axes.spines.top": False, "axes.spines.right": False, "font.size": 9,
-    })
+    plt.rcParams.update(
+        {
+            "figure.facecolor": SURFACE,
+            "axes.facecolor": SURFACE,
+            "axes.edgecolor": MUTED,
+            "axes.labelcolor": INK,
+            "text.color": INK,
+            "xtick.color": MUTED,
+            "ytick.color": MUTED,
+            "axes.grid": True,
+            "grid.color": GRID,
+            "grid.linewidth": 0.6,
+            "axes.spines.top": False,
+            "axes.spines.right": False,
+            "font.size": 9,
+        }
+    )
 
     pipe = joblib.load(MODELS_DIR / "pipeline.joblib")
     metrics = json.loads((MODELS_DIR / "metrics.json").read_text())
@@ -259,7 +269,7 @@ def _(C_PANNE, C_SAIN, X, plt, run_drift, severity, simulate_drift):
     else:
         _current = simulate_drift(X, severity.value)
         _fig, _axes = plt.subplots(1, 2, figsize=(10, 3.2))
-        for _a, _f in zip(_axes, ["tool_wear_min", "torque_nm"]):
+        for _a, _f in zip(_axes, ["tool_wear_min", "torque_nm"], strict=False):
             _a.hist(X[_f], bins=40, alpha=0.6, color=C_SAIN, label="référence")
             _a.hist(_current[_f], bins=40, alpha=0.6, color=C_PANNE, label="production (dérivé)")
             _a.set_title(_f, fontsize=9)
@@ -282,7 +292,9 @@ def _(mo):
 @app.cell
 def _(mo, run_retrain):
     if not run_retrain.value:
-        _out = mo.md("_Clique pour relancer l'entraînement (≈ 15-30 s) et régénérer les artefacts._")
+        _out = mo.md(
+            "_Clique pour relancer l'entraînement (≈ 15-30 s) et régénérer les artefacts._"
+        )
     else:
         from src.model import run as run_training
 

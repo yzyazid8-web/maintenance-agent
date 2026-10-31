@@ -8,7 +8,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from src import config
 
-# 3 variables physiques 
+# 3 variables physiques
 ENGINEERED = ["power_w", "delta_t_k", "wear_x_torque"]
 NUMERIC = config.NUMERIC_FEATURES + ENGINEERED
 CATEGORICAL = config.CATEGORICAL_FEATURES  # ["type"]
@@ -29,7 +29,7 @@ class PhysicsFeatures(BaseEstimator, TransformerMixin):
 
 
 def build_preprocessor(scale: bool) -> ColumnTransformer:
-    """Encode `type` (one-hot) ; standardise le numérique seulement si `scale` """
+    """Encode `type` (one-hot) ; standardise le numérique seulement si `scale`"""
     num = StandardScaler() if scale else "passthrough"
     return ColumnTransformer(
         [

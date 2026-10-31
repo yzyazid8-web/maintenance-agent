@@ -36,9 +36,7 @@ def _evaluate(pipe, X_test, y_test) -> dict:
 
 def train_baseline(X_train, y_train, X_test, y_test):
     """Régression logistique (features standardisées, classes rééquilibrées) - référence faible."""
-    pipe = build_pipeline(
-        LogisticRegression(max_iter=1000, class_weight="balanced"), scale=True
-    )
+    pipe = build_pipeline(LogisticRegression(max_iter=1000, class_weight="balanced"), scale=True)
     pipe.fit(X_train, y_train)
     return pipe, _evaluate(pipe, X_test, y_test)
 

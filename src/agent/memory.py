@@ -51,9 +51,10 @@ class EpisodicMemory:
         count = self.collection.count()
         if count == 0:
             return []
-        res = self.collection.query(
-            query_embeddings=self._embed([query]), n_results=min(k, count)
-        )
+        res = self.collection.query(query_embeddings=self._embed([query]), n_results=min(k, count))
         docs = res["documents"][0]
         dists = res["distances"][0]
-        return [{"text": d, "distance": round(float(dist), 4)} for d, dist in zip(docs, dists)]
+        return [
+            {"text": d, "distance": round(float(dist), 4)}
+            for d, dist in zip(docs, dists, strict=False)
+        ]

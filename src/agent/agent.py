@@ -103,7 +103,11 @@ def build_agent() -> Agent:
         _require_machine(ctx.deps, machine_id)
         modes = ctx.deps.kg.link_modes(ctx.deps.X.loc[machine_id].to_dict())
         if not modes:
-            return {"modes": [], "actions": {}, "message": "Aucun mode déclenché : pas d'action ciblée."}
+            return {
+                "modes": [],
+                "actions": {},
+                "message": "Aucun mode déclenché : pas d'action ciblée.",
+            }
         return {"modes": modes, "actions": {m: ctx.deps.kg.actions_for(m) for m in modes}}
 
     @agent.tool

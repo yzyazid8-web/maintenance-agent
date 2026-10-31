@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# HF Spaces 
+# Utilisateur non-root (bonne pratique conteneur)
 RUN useradd -m -u 1000 user
 USER user
 ENV HOME=/home/user \

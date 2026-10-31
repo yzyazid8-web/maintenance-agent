@@ -23,7 +23,7 @@ class Deps:
     scored: pd.DataFrame  # données + colonne `risk`
     metrics: dict
     kg: KnowledgeGraph  # graphe FMEA (modes -> causes / actions)
-    memory: EpisodicMemory  # mémoire 
+    memory: EpisodicMemory  # mémoire
 
 
 def build_deps() -> Deps:

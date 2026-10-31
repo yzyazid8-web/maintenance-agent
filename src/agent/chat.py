@@ -24,7 +24,7 @@ def build_chat_model():
                 agent.run(prompt, deps=deps, message_history=state["history"]),
                 timeout=TIMEOUT_S,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return (
                 "⏱️ L'agent met trop de temps à répondre — souvent une limite de débit Groq "
                 "(8000 tokens/min). Patiente une minute puis réessaie."

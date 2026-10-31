@@ -88,5 +88,8 @@ class KnowledgeGraph:
         """Mode(s) probable(s) pour une machine + leur description"""
         modes = self.link_modes(row)
         if not modes:
-            return {"modes": [], "message": "Aucun mode physique déclenché (risque diffus ou aléatoire)."}
+            return {
+                "modes": [],
+                "message": "Aucun mode physique déclenché (risque diffus ou aléatoire).",
+            }
         return {"modes": modes, "details": [self.describe_mode(m) for m in modes]}

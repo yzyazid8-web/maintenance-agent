@@ -82,5 +82,7 @@ def drift_report(reference_df, current_df, features=None) -> dict:
         )
     return {
         "per_feature": per_feature,
-        "domain_classifier_auc": round(domain_classifier_auc(reference_df, current_df, features), 3),
+        "domain_classifier_auc": round(
+            domain_classifier_auc(reference_df, current_df, features), 3
+        ),
     }

@@ -26,7 +26,9 @@ def test_extract_tool_calls_keeps_only_calls():
 def test_extract_tool_trace_includes_results():
     msg = SimpleNamespace(
         parts=[
-            SimpleNamespace(part_kind="tool-call", tool_name="predict_risk", args={"machine_id": 7}),
+            SimpleNamespace(
+                part_kind="tool-call", tool_name="predict_risk", args={"machine_id": 7}
+            ),
             SimpleNamespace(part_kind="tool-return", tool_name="predict_risk", content=0.42),
         ]
     )

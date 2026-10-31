@@ -11,7 +11,7 @@ mlflow>=2.14
 # Pas d'evidently : nos mesures reposent sur numpy/scipy/sklearn déjà présents.
 
 # --- Évaluation de l'agent (groundedness) ---
-# Fait maison (LLM-as-judge via l'agent) au jalon 7 : pas de ragas, qui impose openai<2
+# Fait maison (LLM-as-judge via l'agent) : pas de ragas, qui impose openai<2
 # et entre en conflit avec pydantic-ai moderne.
 
 # --- EDA / notebooks ---

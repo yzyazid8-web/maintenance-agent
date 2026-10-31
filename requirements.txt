@@ -1,4 +1,4 @@
-# Dépendances RUNTIME (app servie sur HF Spaces). Garder léger : pas d'Optuna/MLflow/RAGAS ici.
+# Dépendances RUNTIME (app servie dans le conteneur). Garder léger : pas d'Optuna/MLflow/RAGAS ici.
 # Astuce repro : après le 1er install, fige les versions avec `pip freeze > requirements.txt`.
 
 # --- Interface ---

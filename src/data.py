@@ -52,6 +52,4 @@ def split_data(df: pd.DataFrame):
     """
     X = df.drop(columns=[config.TARGET])
     y = df[config.TARGET]
-    return train_test_split(
-        X, y, test_size=config.TEST_SIZE, random_state=config.SEED, stratify=y
-    )
+    return train_test_split(X, y, test_size=config.TEST_SIZE, random_state=config.SEED, stratify=y)

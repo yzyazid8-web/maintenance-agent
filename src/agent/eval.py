@@ -21,7 +21,10 @@ def extract_tool_calls(messages) -> list[str]:
     calls = []
     for message in messages:
         for part in getattr(message, "parts", []):
-            is_call = getattr(part, "part_kind", None) == "tool-call" or type(part).__name__ == "ToolCallPart"
+            is_call = (
+                getattr(part, "part_kind", None) == "tool-call"
+                or type(part).__name__ == "ToolCallPart"
+            )
             if is_call:
                 calls.append(part.tool_name)
     return calls
@@ -36,7 +39,9 @@ def extract_tool_trace(messages) -> list[dict]:
             if kind == "tool-call" or type(part).__name__ == "ToolCallPart":
                 trace.append({"appel": part.tool_name, "args": str(getattr(part, "args", ""))})
             elif kind == "tool-return" or type(part).__name__ == "ToolReturnPart":
-                trace.append({"resultat_de": part.tool_name, "valeur": str(getattr(part, "content", ""))})
+                trace.append(
+                    {"resultat_de": part.tool_name, "valeur": str(getattr(part, "content", ""))}
+                )
     return trace
 
 
@@ -98,11 +103,13 @@ def evaluate(pause: float = 2.0) -> list[dict]:
         question = item["question"]
         print(f"[{i}] {question[:55]}...")
         try:
-            res = _retry(lambda: agent.run_sync(question, deps=deps))
+            res = _retry(lambda q=question: agent.run_sync(q, deps=deps))
             msgs = res.all_messages()
             calls = extract_tool_calls(msgs)
             trace = extract_tool_trace(msgs)
-            score = _retry(lambda: _judge(judge_agent, question, res.output, trace)).score
+            score = _retry(
+                lambda q=question, r=res, t=trace: _judge(judge_agent, q, r.output, t)
+            ).score
             tool_ok = item["expected_tool"] in calls
         except Exception as exc:  # une question qui échoue ne casse pas tout le run
             print(f"    erreur : {type(exc).__name__}")
@@ -134,7 +141,9 @@ def to_markdown(rows: list[dict]) -> str:
     ]
     for r in rows:
         mark = "✅" if r["tool_ok"] else "❌"
-        lines.append(f"| {r['question'][:60]} | `{r['expected_tool']}` | {mark} | {r['groundedness']}/5 |")
+        lines.append(
+            f"| {r['question'][:60]} | `{r['expected_tool']}` | {mark} | {r['groundedness']}/5 |"
+        )
     return "\n".join(lines)
 
 

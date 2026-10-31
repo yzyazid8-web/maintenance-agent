@@ -1,4 +1,4 @@
-"""Tests des données """
+"""Tests des données"""
 
 from src import config
 from src.data import load_data, load_failure_modes, split_data

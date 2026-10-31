@@ -8,18 +8,17 @@ DATA_DIR = ROOT / "data"
 MODELS_DIR = ROOT / "models"
 RAW_CSV = DATA_DIR / "ai4i2020.csv"
 
-# Source des données : AI4I 2020 
+# Source des données : AI4I 2020
 UCI_URL = (
-    "https://archive.ics.uci.edu/static/public/601/"
-    "ai4i+2020+predictive+maintenance+dataset.zip"
+    "https://archive.ics.uci.edu/static/public/601/ai4i+2020+predictive+maintenance+dataset.zip"
 )
 CSV_IN_ZIP = "ai4i2020.csv"
 
-# Reproductibilité 
+# Reproductibilité
 SEED = 42
 TEST_SIZE = 0.2
 
-# Schéma des colonnes 
+# Schéma des colonnes
 TARGET = "machine_failure"
 ID_COLS = ["UDI", "Product ID"]
 FAILURE_MODE_COLS = ["TWF", "HDF", "PWF", "OSF", "RNF"]
