@@ -1,68 +1,120 @@
-# Ontologie FMEA des modes de panne AI4I 2020
-# Seuils issus de la documentation du dataset 
-# Sert de base au Knowledge Graph : mode -> causes / signature / actions correctives.
+# Ontologie FMEA de maintenance (AI4I 2020).
+# Chaque mode de panne est relié à ses causes, symptômes, composants, actions et capteurs.
+# - `thresholds` sert au diagnostic DÉTERMINISTE (règles physiques documentées du dataset).
+# - les autres champs (texte) alimentent le graphe pour le GraphRAG (récupération sémantique).
+# Les noms partagés (ex. "Outil de coupe", "Broche") relient les modes entre eux (multi-sauts).
 
 TWF:
   label: Usure de l'outil (Tool Wear Failure)
-  description: L'outil se dégrade puis casse après un temps d'usure critique.
+  description: >
+    L'outil de coupe se dégrade avec la durée d'usinage et finit par casser lorsque
+    son usure franchit un seuil critique.
   signature: usure de l'outil comprise entre 200 et 240 min
-  causes:
-    - Usure cumulée de l'outil
   thresholds:
     tool_wear_low: 200
     tool_wear_high: 240
+  causes:
+    - Usure cumulée de l'outil de coupe
+  symptoms:
+    - Temps d'usure outil élevé
+  components:
+    - Outil de coupe
   actions:
-    - Remplacer l'outil
+    - Remplacer l'outil de coupe
     - Planifier un changement d'outil préventif avant 200 min d'usure
+    - Suivre la durée d'usinage cumulée pour anticiper le remplacement
+  sensors:
+    - Capteur d'usure outil
 
 HDF:
   label: Dissipation thermique (Heat Dissipation Failure)
-  description: La chaleur n'est plus évacuée (faible écart de température et vitesse basse).
+  description: >
+    La chaleur générée pendant l'usinage n'est plus évacuée : l'écart de température
+    procédé-air est trop faible et la vitesse de rotation trop basse.
   signature: écart de température (procédé - air) < 8,6 K ET vitesse < 1380 rpm
-  causes:
-    - Écart de température trop faible
-    - Vitesse de rotation trop basse
   thresholds:
     delta_t_max: 8.6
     speed_max: 1380
+  causes:
+    - Écart de température procédé-air insuffisant
+    - Vitesse de rotation trop basse
+  symptoms:
+    - Faible écart de température
+    - Vitesse de rotation basse
+  components:
+    - Système de refroidissement
+    - Broche
   actions:
     - Vérifier et nettoyer le système de refroidissement
     - Rétablir une vitesse de rotation adéquate
+    - Améliorer la ventilation du poste
+  sensors:
+    - Capteur de température air
+    - Capteur de température procédé
+    - Capteur de vitesse de rotation
 
 PWF:
-  label: Puissance (Power Failure)
-  description: La puissance mécanique sort de la plage admissible (trop basse ou trop haute).
+  label: Panne de puissance (Power Failure)
+  description: >
+    La puissance mécanique (couple × vitesse angulaire) sort de la plage admissible,
+    soit trop basse, soit trop haute.
   signature: puissance < 3500 W ou > 9000 W
-  causes:
-    - Puissance hors de la plage 3500-9000 W
   thresholds:
     power_min: 3500
     power_max: 9000
+  causes:
+    - Puissance mécanique hors de la plage 3500-9000 W
+  symptoms:
+    - Couple ou vitesse à des valeurs extrêmes
+  components:
+    - Moteur et entraînement
+    - Broche
   actions:
-    - Ajuster couple et vitesse pour revenir dans la plage de puissance
+    - Ajuster le couple et la vitesse pour revenir dans la plage de puissance
     - Contrôler l'alimentation et la transmission
+  sensors:
+    - Capteur de couple
+    - Capteur de vitesse de rotation
 
 OSF:
   label: Surcharge (Overstrain Failure)
-  description: Contrainte mécanique excessive (produit usure x couple au-dessus du seuil).
-  signature: usure x couple > seuil dépendant du type (L 11000, M 12000, H 13000)
-  causes:
-    - Produit usure x couple trop élevé
+  description: >
+    Contrainte mécanique excessive : le produit usure × couple dépasse un seuil qui
+    dépend du type de produit, ce qui sursollicite l'outil et la broche.
+  signature: usure × couple > seuil dépendant du type (L 11000, M 12000, H 13000)
   thresholds:
     osf_by_type:
       L: 11000
       M: 12000
       H: 13000
+  causes:
+    - Produit usure × couple trop élevé
+    - Charge mécanique excessive
+  symptoms:
+    - Couple élevé
+    - Usure outil élevée
+  components:
+    - Outil de coupe
+    - Broche
   actions:
-    - Réduire la charge (couple) ou remplacer l'outil usé
+    - Réduire la charge (couple) ou l'avance
+    - Remplacer l'outil de coupe usé
     - Adapter les paramètres de coupe au type de produit
+  sensors:
+    - Capteur de couple
+    - Capteur d'usure outil
 
 RNF:
   label: Panne aléatoire (Random Failure)
-  description: Défaillance aléatoire (~0,1 %) sans signature physique ; non prédictible.
+  description: >
+    Défaillance aléatoire (~0,1 %) sans cause physique identifiable ; non prédictible
+    à partir des mesures.
   signature: aucune (bruit aléatoire)
+  thresholds: {}
   causes:
     - Aléa
-  thresholds: {}
+  symptoms: []
+  components: []
   actions:
-    - Pas d'action ciblée ; surveillance générale du parc
+    - Pas d'action ciblée ; maintenance préventive de routine et surveillance générale
+  sensors: []

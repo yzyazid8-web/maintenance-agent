@@ -1,12 +1,31 @@
-"""Pont entre mo.ui.chat et l'agent : conserve l'historique d'un tour à l'autre"""
+"""Pont entre mo.ui.chat et l'agent : conserve l'historique d'un tour à l'autre.
+
+Observabilité : à chaque tour, les outils réellement appelés par l'agent sont loggés dans le
+terminal (preuve que le GraphRAG / les outils tournent, et pas seulement la connaissance du LLM).
+"""
 
 import asyncio
+import sys
 
 from src.agent.agent import build_agent
+from src.agent.eval import extract_tool_trace
 from src.agent.guardrails import REFUSAL_MESSAGE, check_input
 from src.agent.tools import build_deps
 
 TIMEOUT_S = 90
+
+
+def _log_tools(result) -> None:
+    """Affiche dans le terminal les outils appelés pendant CE tour (+ seeds du GraphRAG)"""
+    trace = extract_tool_trace(result.new_messages())
+    calls = [t["appel"] for t in trace if "appel" in t]
+    if not calls:
+        print("[agent] aucun outil appelé (réponse depuis la connaissance du LLM)", file=sys.stderr)
+        return
+    print(f"[agent] outils appelés : {calls}", file=sys.stderr)
+    for t in trace:
+        if t.get("resultat_de") == "search_knowledge":
+            print(f"        search_knowledge (GraphRAG) → {t['valeur'][:220]}", file=sys.stderr)
 
 
 def build_chat_model():
@@ -31,6 +50,7 @@ def build_chat_model():
             )
         except Exception as exc:
             return f"⚠️ Erreur de l'agent ({type(exc).__name__}). Réessaie dans un instant."
+        _log_tools(result)
         state["history"] = result.all_messages()
         return result.output
 

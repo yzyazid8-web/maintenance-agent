@@ -40,3 +40,33 @@ def test_graph_built():
     kg = KnowledgeGraph()
     assert "OSF" in kg.graph
     assert kg.graph.number_of_nodes() > 5  # 5 modes + causes + actions
+
+
+# GraphRAG (embedder factice : vecteurs de comptage de mots-clés, sans réseau) 
+
+_VOCAB = ["usure", "outil", "couple", "temperature", "vitesse", "puissance", "refroidissement"]
+
+
+def _fake_embed(texts: list[str]) -> list[list[float]]:
+    return [[float(t.lower().count(w)) for w in _VOCAB] for t in texts]
+
+
+def test_semantic_search_returns_relevant_node():
+    kg = KnowledgeGraph(embed_fn=_fake_embed)
+    hits = kg.semantic_search("problème d'usure de l'outil de coupe", k=3)
+    assert hits
+    assert any("usure" in h.lower() or "outil" in h.lower() for h in hits)
+
+
+def test_graphrag_returns_grounded_context():
+    kg = KnowledgeGraph(embed_fn=_fake_embed)
+    out = kg.graphrag("comment éviter une surcharge liée au couple et à l'usure ?")
+    assert out["seeds"]
+    assert isinstance(out["context"], str) and out["context"].strip()
+
+
+def test_expand_subgraph_connects_mode_to_its_nodes():
+    kg = KnowledgeGraph(embed_fn=_fake_embed)
+    sub = kg.expand_subgraph(["OSF"], hops=1)
+    # un mode doit être relié à ses actions/causes
+    assert sub.number_of_nodes() > 1

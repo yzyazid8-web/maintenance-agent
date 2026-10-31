@@ -32,6 +32,11 @@ SYSTEM_PROMPT = (
     "diagnose_mode, recommend_actions et explain_mode : ne propose jamais une action qui ne "
     "provient pas du graphe FMEA. "
     "Tu peux mémoriser un diagnostic avec save_note et retrouver des cas passés avec recall_memory. "
+    "Pour une question de CONNAISSANCE en langage naturel (causes, symptômes, prévention, capteurs…), "
+    "utilise search_knowledge, qui récupère le contexte pertinent dans le graphe FMEA. "
+    "CITE TES SOURCES : quand tu t'appuies sur le graphe FMEA (search_knowledge, diagnose_mode, "
+    "recommend_actions, explain_mode), termine par une ligne « Sources : … » listant les modes ou "
+    "éléments du graphe utilisés. "
     "Décline uniquement les sujets SANS rapport avec cette application ou la maintenance "
     "(ex. météo, cuisine)."
 )
@@ -114,6 +119,11 @@ def build_agent() -> Agent:
     def explain_mode(ctx: RunContext[Deps], mode: str) -> dict:
         """Décrit un mode de panne (TWF, HDF, PWF, OSF, RNF) : cause, signature, actions"""
         return ctx.deps.kg.describe_mode(mode.upper())
+
+    @agent.tool
+    def search_knowledge(ctx: RunContext[Deps], query: str) -> dict:
+        """Récupère (GraphRAG) le contexte FMEA pertinent pour une question de connaissance"""
+        return ctx.deps.kg.graphrag(query)
 
     @agent.tool
     def save_note(ctx: RunContext[Deps], text: str) -> dict:
