@@ -10,9 +10,9 @@ mlflow>=2.14
 # --- Monitoring de drift (option à la lib maison PSI/KS) ---
 evidently>=0.4
 
-# --- Évaluation de l'agent (groundedness / LLM-as-judge) ---
-ragas>=0.2
-# deepeval>=1.0   # alternative à RAGAS, décommente si tu préfères
+# --- Évaluation de l'agent (groundedness) ---
+# Fait maison (LLM-as-judge via l'agent) au jalon 7 : pas de ragas, qui impose openai<2
+# et entre en conflit avec pydantic-ai moderne.
 
 # --- EDA / notebooks ---
 jupyterlab>=4.0

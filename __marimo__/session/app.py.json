@@ -46,12 +46,12 @@
     },
     {
       "id": "bkHC",
-      "code_hash": "1ef341314990ee100cf86ceadd780123",
+      "code_hash": "d9061f816c1245f0791c06ee06aaa176",
       "outputs": [
         {
           "type": "data",
           "data": {
-            "text/html": "<marimo-ui-element object-id='bkHC-0' random-id='8a5b26d8-78fd-eed0-6563-dc9eb94cf0c3'><marimo-slider data-initial-value='0.5' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eSeuil de risque&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-start='0.05' data-stop='0.95' data-step='0.05' data-steps='[]' data-debounce='false' data-disabled='false' data-orientation='&quot;horizontal&quot;' data-show-value='false' data-include-input='false' data-full-width='false'></marimo-slider></marimo-ui-element>"
+            "text/html": "<div style='display: flex;flex: 1;flex-direction: column;justify-content: flex-start;align-items: normal;flex-wrap: nowrap;gap: 0.5rem'><span class=\"markdown prose dark:prose-invert contents\"><h3 id=\"assistant-maintenance\">\ud83e\udd16 Assistant maintenance</h3></span><marimo-ui-element object-id='bkHC-0' random-id='fecbb67f-cad7-b41e-c01a-10dd64ec8780'><marimo-chatbot data-initial-value='{&quot;messages&quot;:[]}' data-label='null' data-prompts='[&quot;Quelles sont les performances du mod\u00e8le ?&quot;,&quot;Quelles sont les 5 machines les plus \u00e0 risque ?&quot;,&quot;Pourquoi la machine 0 est-elle \u00e0 risque ?&quot;]' data-show-configuration-controls='false' data-config='{&quot;max_tokens&quot;:4096,&quot;temperature&quot;:0.5,&quot;top_p&quot;:1,&quot;top_k&quot;:40,&quot;frequency_penalty&quot;:0,&quot;presence_penalty&quot;:0}' data-allow-attachments='false' data-disabled='false'></marimo-chatbot></marimo-ui-element></div>"
           }
         }
       ],
@@ -59,6 +59,19 @@
     },
     {
       "id": "lEQa",
+      "code_hash": "1ef341314990ee100cf86ceadd780123",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/html": "<marimo-ui-element object-id='lEQa-0' random-id='dbd4fc8b-8675-4db7-eba6-ae26c5843977'><marimo-slider data-initial-value='0.5' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eSeuil de risque&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-start='0.05' data-stop='0.95' data-step='0.05' data-steps='[]' data-debounce='false' data-disabled='false' data-orientation='&quot;horizontal&quot;' data-show-value='false' data-include-input='false' data-full-width='false'></marimo-slider></marimo-ui-element>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "PKri",
       "code_hash": "f1b5ce07b8d308dac189e385b941db2d",
       "outputs": [
         {
@@ -71,20 +84,20 @@
       "console": []
     },
     {
-      "id": "PKri",
+      "id": "Xref",
       "code_hash": "abacbab2ecf4c434d22945c5159c3109",
       "outputs": [
         {
           "type": "data",
           "data": {
-            "text/html": "<div style='display: flex;flex: 1;flex-direction: column;justify-content: flex-start;align-items: normal;flex-wrap: nowrap;gap: 0.5rem'><span class=\"markdown prose dark:prose-invert contents\"><h3 id=\"machines-a-risque-050-734-machines\">Machines \u00e0 risque (\u2265 0.50) \u2014 734 machine(s)</h3></span><marimo-ui-element object-id='PKri-0' random-id='0eb61414-82be-6db7-cb3d-1796db4e4fb3'><marimo-table data-initial-value='[]' data-label='null' data-data='&quot;[{&#92;&quot;Index0&#92;&quot;:7593,&#92;&quot;_marimo_row_id&#92;&quot;:0,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:300.5,&#92;&quot;process_temp_k&#92;&quot;:311.2,&#92;&quot;rotational_speed_rpm&#92;&quot;:1270,&#92;&quot;torque_nm&#92;&quot;:67.5,&#92;&quot;tool_wear_min&#92;&quot;:208,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9700000286102295},{&#92;&quot;Index0&#92;&quot;:4729,&#92;&quot;_marimo_row_id&#92;&quot;:1,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:303.4,&#92;&quot;process_temp_k&#92;&quot;:311.8,&#92;&quot;rotational_speed_rpm&#92;&quot;:1306,&#92;&quot;torque_nm&#92;&quot;:61.0,&#92;&quot;tool_wear_min&#92;&quot;:215,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.968999981880188},{&#92;&quot;Index0&#92;&quot;:3943,&#92;&quot;_marimo_row_id&#92;&quot;:2,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:302.3,&#92;&quot;process_temp_k&#92;&quot;:311.4,&#92;&quot;rotational_speed_rpm&#92;&quot;:1333,&#92;&quot;torque_nm&#92;&quot;:66.7,&#92;&quot;tool_wear_min&#92;&quot;:205,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9679999947547913},{&#92;&quot;Index0&#92;&quot;:4643,&#92;&quot;_marimo_row_id&#92;&quot;:3,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:303.2,&#92;&quot;process_temp_k&#92;&quot;:311.4,&#92;&quot;rotational_speed_rpm&#92;&quot;:1324,&#92;&quot;torque_nm&#92;&quot;:54.2,&#92;&quot;tool_wear_min&#92;&quot;:228,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9679999947547913},{&#92;&quot;Index0&#92;&quot;:4383,&#92;&quot;_marimo_row_id&#92;&quot;:4,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:301.7,&#92;&quot;process_temp_k&#92;&quot;:309.5,&#92;&quot;rotational_speed_rpm&#92;&quot;:1298,&#92;&quot;torque_nm&#92;&quot;:65.5,&#92;&quot;tool_wear_min&#92;&quot;:229,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9679999947547913},{&#92;&quot;Index0&#92;&quot;:1496,&#92;&quot;_marimo_row_id&#92;&quot;:5,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:298.0,&#92;&quot;process_temp_k&#92;&quot;:308.7,&#92;&quot;rotational_speed_rpm&#92;&quot;:1268,&#92;&quot;torque_nm&#92;&quot;:69.4,&#92;&quot;tool_wear_min&#92;&quot;:189,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9670000076293945},{&#92;&quot;Index0&#92;&quot;:4462,&#92;&quot;_marimo_row_id&#92;&quot;:6,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:302.7,&#92;&quot;process_temp_k&#92;&quot;:310.5,&#92;&quot;rotational_speed_rpm&#92;&quot;:1263,&#92;&quot;torque_nm&#92;&quot;:67.8,&#92;&quot;tool_wear_min&#92;&quot;:197,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9660000205039978},{&#92;&quot;Index0&#92;&quot;:6497,&#92;&quot;_marimo_row_id&#92;&quot;:7,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:300.8,&#92;&quot;process_temp_k&#92;&quot;:309.9,&#92;&quot;rotational_speed_rpm&#92;&quot;:1312,&#92;&quot;torque_nm&#92;&quot;:65.3,&#92;&quot;tool_wear_min&#92;&quot;:192,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9660000205039978},{&#92;&quot;Index0&#92;&quot;:4370,&#92;&quot;_marimo_row_id&#92;&quot;:8,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:302.0,&#92;&quot;process_temp_k&#92;&quot;:309.9,&#92;&quot;rotational_speed_rpm&#92;&quot;:1308,&#92;&quot;torque_nm&#92;&quot;:57.6,&#92;&quot;tool_wear_min&#92;&quot;:197,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9660000205039978},{&#92;&quot;Index0&#92;&quot;:3854,&#92;&quot;_marimo_row_id&#92;&quot;:9,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:302.4,&#92;&quot;process_temp_k&#92;&quot;:311.0,&#92;&quot;rotational_speed_rpm&#92;&quot;:1338,&#92;&quot;torque_nm&#92;&quot;:67.6,&#92;&quot;tool_wear_min&#92;&quot;:194,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9649999737739563}]&quot;' data-total-rows='734' data-total-columns='8' data-max-columns='50' data-banner-text='&quot;&quot;' data-pagination='true' data-page-size='10' data-field-types='[[&quot;type&quot;,[&quot;string&quot;,&quot;str&quot;]],[&quot;air_temp_k&quot;,[&quot;number&quot;,&quot;float64&quot;]],[&quot;process_temp_k&quot;,[&quot;number&quot;,&quot;float64&quot;]],[&quot;rotational_speed_rpm&quot;,[&quot;integer&quot;,&quot;int64&quot;]],[&quot;torque_nm&quot;,[&quot;number&quot;,&quot;float64&quot;]],[&quot;tool_wear_min&quot;,[&quot;integer&quot;,&quot;int64&quot;]],[&quot;machine_failure&quot;,[&quot;integer&quot;,&quot;int64&quot;]],[&quot;risk&quot;,[&quot;number&quot;,&quot;float32&quot;]]]' data-selection='&quot;multi&quot;' data-show-filters='true' data-show-download='true' data-show-search='true' data-show-column-summaries='true' data-show-data-types='true' data-show-page-size-selector='true' data-show-column-explorer='true' data-show-chart-builder='true' data-row-headers='[[&quot;Index0&quot;,[&quot;integer&quot;,&quot;int64&quot;]]]' data-hidden-columns='[]' data-has-stable-row-id='true' data-lazy='false' data-preload='false'></marimo-table></marimo-ui-element></div>"
+            "text/html": "<div style='display: flex;flex: 1;flex-direction: column;justify-content: flex-start;align-items: normal;flex-wrap: nowrap;gap: 0.5rem'><span class=\"markdown prose dark:prose-invert contents\"><h3 id=\"machines-a-risque-050-734-machines\">Machines \u00e0 risque (\u2265 0.50) \u2014 734 machine(s)</h3></span><marimo-ui-element object-id='Xref-0' random-id='2cfa7244-e8a6-c434-11f3-ef967191fb5b'><marimo-table data-initial-value='[]' data-label='null' data-data='&quot;[{&#92;&quot;Index0&#92;&quot;:7593,&#92;&quot;_marimo_row_id&#92;&quot;:0,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:300.5,&#92;&quot;process_temp_k&#92;&quot;:311.2,&#92;&quot;rotational_speed_rpm&#92;&quot;:1270,&#92;&quot;torque_nm&#92;&quot;:67.5,&#92;&quot;tool_wear_min&#92;&quot;:208,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9700000286102295},{&#92;&quot;Index0&#92;&quot;:4729,&#92;&quot;_marimo_row_id&#92;&quot;:1,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:303.4,&#92;&quot;process_temp_k&#92;&quot;:311.8,&#92;&quot;rotational_speed_rpm&#92;&quot;:1306,&#92;&quot;torque_nm&#92;&quot;:61.0,&#92;&quot;tool_wear_min&#92;&quot;:215,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.968999981880188},{&#92;&quot;Index0&#92;&quot;:3943,&#92;&quot;_marimo_row_id&#92;&quot;:2,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:302.3,&#92;&quot;process_temp_k&#92;&quot;:311.4,&#92;&quot;rotational_speed_rpm&#92;&quot;:1333,&#92;&quot;torque_nm&#92;&quot;:66.7,&#92;&quot;tool_wear_min&#92;&quot;:205,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9679999947547913},{&#92;&quot;Index0&#92;&quot;:4643,&#92;&quot;_marimo_row_id&#92;&quot;:3,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:303.2,&#92;&quot;process_temp_k&#92;&quot;:311.4,&#92;&quot;rotational_speed_rpm&#92;&quot;:1324,&#92;&quot;torque_nm&#92;&quot;:54.2,&#92;&quot;tool_wear_min&#92;&quot;:228,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9679999947547913},{&#92;&quot;Index0&#92;&quot;:4383,&#92;&quot;_marimo_row_id&#92;&quot;:4,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:301.7,&#92;&quot;process_temp_k&#92;&quot;:309.5,&#92;&quot;rotational_speed_rpm&#92;&quot;:1298,&#92;&quot;torque_nm&#92;&quot;:65.5,&#92;&quot;tool_wear_min&#92;&quot;:229,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9679999947547913},{&#92;&quot;Index0&#92;&quot;:1496,&#92;&quot;_marimo_row_id&#92;&quot;:5,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:298.0,&#92;&quot;process_temp_k&#92;&quot;:308.7,&#92;&quot;rotational_speed_rpm&#92;&quot;:1268,&#92;&quot;torque_nm&#92;&quot;:69.4,&#92;&quot;tool_wear_min&#92;&quot;:189,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9670000076293945},{&#92;&quot;Index0&#92;&quot;:4462,&#92;&quot;_marimo_row_id&#92;&quot;:6,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:302.7,&#92;&quot;process_temp_k&#92;&quot;:310.5,&#92;&quot;rotational_speed_rpm&#92;&quot;:1263,&#92;&quot;torque_nm&#92;&quot;:67.8,&#92;&quot;tool_wear_min&#92;&quot;:197,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9660000205039978},{&#92;&quot;Index0&#92;&quot;:6497,&#92;&quot;_marimo_row_id&#92;&quot;:7,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:300.8,&#92;&quot;process_temp_k&#92;&quot;:309.9,&#92;&quot;rotational_speed_rpm&#92;&quot;:1312,&#92;&quot;torque_nm&#92;&quot;:65.3,&#92;&quot;tool_wear_min&#92;&quot;:192,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9660000205039978},{&#92;&quot;Index0&#92;&quot;:4370,&#92;&quot;_marimo_row_id&#92;&quot;:8,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:302.0,&#92;&quot;process_temp_k&#92;&quot;:309.9,&#92;&quot;rotational_speed_rpm&#92;&quot;:1308,&#92;&quot;torque_nm&#92;&quot;:57.6,&#92;&quot;tool_wear_min&#92;&quot;:197,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9660000205039978},{&#92;&quot;Index0&#92;&quot;:3854,&#92;&quot;_marimo_row_id&#92;&quot;:9,&#92;&quot;type&#92;&quot;:&#92;&quot;L&#92;&quot;,&#92;&quot;air_temp_k&#92;&quot;:302.4,&#92;&quot;process_temp_k&#92;&quot;:311.0,&#92;&quot;rotational_speed_rpm&#92;&quot;:1338,&#92;&quot;torque_nm&#92;&quot;:67.6,&#92;&quot;tool_wear_min&#92;&quot;:194,&#92;&quot;machine_failure&#92;&quot;:1,&#92;&quot;risk&#92;&quot;:0.9649999737739563}]&quot;' data-total-rows='734' data-total-columns='8' data-max-columns='50' data-banner-text='&quot;&quot;' data-pagination='true' data-page-size='10' data-field-types='[[&quot;type&quot;,[&quot;string&quot;,&quot;str&quot;]],[&quot;air_temp_k&quot;,[&quot;number&quot;,&quot;float64&quot;]],[&quot;process_temp_k&quot;,[&quot;number&quot;,&quot;float64&quot;]],[&quot;rotational_speed_rpm&quot;,[&quot;integer&quot;,&quot;int64&quot;]],[&quot;torque_nm&quot;,[&quot;number&quot;,&quot;float64&quot;]],[&quot;tool_wear_min&quot;,[&quot;integer&quot;,&quot;int64&quot;]],[&quot;machine_failure&quot;,[&quot;integer&quot;,&quot;int64&quot;]],[&quot;risk&quot;,[&quot;number&quot;,&quot;float32&quot;]]]' data-selection='&quot;multi&quot;' data-show-filters='true' data-show-download='true' data-show-search='true' data-show-column-summaries='true' data-show-data-types='true' data-show-page-size-selector='true' data-show-column-explorer='true' data-show-chart-builder='true' data-row-headers='[[&quot;Index0&quot;,[&quot;integer&quot;,&quot;int64&quot;]]]' data-hidden-columns='[]' data-has-stable-row-id='true' data-lazy='false' data-preload='false'></marimo-table></marimo-ui-element></div>"
           }
         }
       ],
       "console": []
     },
     {
-      "id": "Xref",
+      "id": "SFPL",
       "code_hash": "2c899a2d64b616dc619a1f688abb6964",
       "outputs": [
         {
@@ -97,7 +110,7 @@
       "console": []
     },
     {
-      "id": "SFPL",
+      "id": "BYtC",
       "code_hash": "c74ffa6e6974c6cfcd363f5d51984daf",
       "outputs": [
         {
@@ -110,20 +123,20 @@
       "console": []
     },
     {
-      "id": "BYtC",
+      "id": "RGSE",
       "code_hash": "2107765cef4e76ff19b81f69674fea82",
       "outputs": [
         {
           "type": "data",
           "data": {
-            "text/html": "<marimo-ui-element object-id='BYtC-0' random-id='52122edd-5f5e-e223-9fb2-e05847e04378'><marimo-dropdown data-initial-value='[&quot;7593&quot;]' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eInspecter une machine (top 30 \u00e0 risque)&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-options='[&quot;7593&quot;,&quot;4729&quot;,&quot;3943&quot;,&quot;4643&quot;,&quot;4383&quot;,&quot;1496&quot;,&quot;4462&quot;,&quot;6497&quot;,&quot;4370&quot;,&quot;3854&quot;,&quot;4642&quot;,&quot;4117&quot;,&quot;4417&quot;,&quot;4254&quot;,&quot;9084&quot;,&quot;9974&quot;,&quot;4342&quot;,&quot;8192&quot;,&quot;2761&quot;,&quot;3019&quot;,&quot;7509&quot;,&quot;9659&quot;,&quot;69&quot;,&quot;9664&quot;,&quot;6248&quot;,&quot;5734&quot;,&quot;7167&quot;,&quot;1419&quot;,&quot;8195&quot;,&quot;8437&quot;]' data-allow-select-none='false' data-searchable='false' data-full-width='false' data-disabled='false'></marimo-dropdown></marimo-ui-element>"
+            "text/html": "<marimo-ui-element object-id='RGSE-0' random-id='4028c96c-ad10-d778-151f-a29b9a73494e'><marimo-dropdown data-initial-value='[&quot;7593&quot;]' data-label='&quot;&#92;u003cspan class=&#92;&quot;markdown prose dark:prose-invert contents&#92;&quot;&#92;u003e&#92;u003cspan class=&#92;&quot;paragraph&#92;&quot;&#92;u003eInspecter une machine (top 30 \u00e0 risque)&#92;u003c/span&#92;u003e&#92;u003c/span&#92;u003e&quot;' data-options='[&quot;7593&quot;,&quot;4729&quot;,&quot;3943&quot;,&quot;4643&quot;,&quot;4383&quot;,&quot;1496&quot;,&quot;4462&quot;,&quot;6497&quot;,&quot;4370&quot;,&quot;3854&quot;,&quot;4642&quot;,&quot;4117&quot;,&quot;4417&quot;,&quot;4254&quot;,&quot;9084&quot;,&quot;9974&quot;,&quot;4342&quot;,&quot;8192&quot;,&quot;2761&quot;,&quot;3019&quot;,&quot;7509&quot;,&quot;9659&quot;,&quot;69&quot;,&quot;9664&quot;,&quot;6248&quot;,&quot;5734&quot;,&quot;7167&quot;,&quot;1419&quot;,&quot;8195&quot;,&quot;8437&quot;]' data-allow-select-none='false' data-searchable='false' data-full-width='false' data-disabled='false'></marimo-dropdown></marimo-ui-element>"
           }
         }
       ],
       "console": []
     },
     {
-      "id": "RGSE",
+      "id": "Kclp",
       "code_hash": "6014aa38b6c222664e4e218db451413c",
       "outputs": [
         {

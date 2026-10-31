@@ -13,9 +13,9 @@ shap>=0.44
 joblib>=1.3
 
 # --- Agent LLM (tool calling typé) + client OpenAI-compatible (Groq / Ollama) ---
+# pydantic-ai >= 2.0 : requis pour l'intégration mo.ui.chat de marimo (module pydantic_ai.ui).
 pydantic>=2.6
-pydantic-ai-slim[openai]>=0.0.14
-openai>=1.40
+pydantic-ai-slim[openai]>=2.0
 
 # --- Mémoire persistante (embeddings légers + vector store) ---
 sentence-transformers>=3.0

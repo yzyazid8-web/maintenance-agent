@@ -60,6 +60,30 @@ def _(mo):
 
 @app.cell
 def _(mo):
+    try:
+        from src.agent.chat import build_chat_model
+
+        _assistant = mo.ui.chat(
+            build_chat_model(),
+            prompts=[
+                "Quelles sont les performances du modèle ?",
+                "Quelles sont les 5 machines les plus à risque ?",
+                "Pourquoi la machine 0 est-elle à risque ?",
+            ],
+        )
+        _out = mo.vstack([mo.md("### 🤖 Assistant maintenance"), _assistant])
+    except Exception as _e:  # pas de backend LLM : le dashboard reste utilisable
+        _out = mo.md(
+            "### 🤖 Assistant maintenance\n"
+            "_Indisponible : configure un backend LLM (GROQ_API_KEY, ou LLM_BACKEND=ollama)._\n\n"
+            f"`{_e}`"
+        )
+    _out
+    return
+
+
+@app.cell
+def _(mo):
     threshold = mo.ui.slider(0.05, 0.95, value=0.5, step=0.05, label="Seuil de risque")
     threshold
     return (threshold,)
