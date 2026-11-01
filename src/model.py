@@ -7,8 +7,10 @@ import json
 
 import joblib
 import mlflow
+import numpy as np
 import optuna
 import pandas as pd
+from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score, roc_auc_score
 from sklearn.model_selection import StratifiedKFold, cross_val_predict, cross_val_score
@@ -17,6 +19,8 @@ from xgboost import XGBClassifier
 from src import config
 from src.data import load_data, split_data
 from src.features import build_pipeline
+
+COST_FN, COST_FP = 10.0, 1.0
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
@@ -91,6 +95,20 @@ def _oof_scores(df, best_params) -> pd.DataFrame:
     return pd.DataFrame({"risk": oof}, index=df.index)
 
 
+def _optimal_threshold(y, proba, cost_fn: float = COST_FN, cost_fp: float = COST_FP) -> float:
+    """Seuil qui minimise le coût attendu (cost_fn * faux négatifs + cost_fp * faux positifs)"""
+    y = np.asarray(y)
+    best_t, best_cost = 0.5, float("inf")
+    for t in np.linspace(0.01, 0.99, 99):
+        pred = proba >= t
+        fn = int(((y == 1) & ~pred).sum())
+        fp = int(((y == 0) & pred).sum())
+        cost = cost_fn * fn + cost_fp * fp
+        if cost < best_cost:
+            best_cost, best_t = cost, float(t)
+    return best_t
+
+
 def run(n_trials: int = 30) -> dict:
     """Entraîne baseline + XGBoost, logge dans MLflow, sauvegarde le pipeline et les métriques."""
     df = load_data()
@@ -113,13 +131,29 @@ def run(n_trials: int = 30) -> dict:
 
     config.MODELS_DIR.mkdir(parents=True, exist_ok=True)
     joblib.dump(pipe, config.MODELS_DIR / "pipeline.joblib")
-    results = {"baseline": base_metrics, "xgboost": xgb_metrics, "best_params": best_params}
-    (config.MODELS_DIR / "metrics.json").write_text(json.dumps(results, indent=2))
 
-    # Risque out-of-fold (hors-échantillon) 
-    _oof_scores(df, best_params).to_csv(
+    # Risque out-of-fold brut (hors-échantillon), puis calibration 
+    y_all = df[config.TARGET].to_numpy()
+    raw_oof = _oof_scores(df, best_params)["risk"].to_numpy()
+    calibrator = IsotonicRegression(out_of_bounds="clip").fit(raw_oof, y_all)
+    cal_oof = calibrator.predict(raw_oof)
+    joblib.dump(calibrator, config.MODELS_DIR / "calibrator.joblib")
+    pd.DataFrame({"risk": cal_oof}, index=df.index).to_csv(
         config.MODELS_DIR / "oof_scores.csv", index_label="machine_id"
     )
+
+    # Seuil choisi par coût métier (sur les probabilités calibrées)
+    threshold = _optimal_threshold(y_all, cal_oof)
+
+    results = {
+        "baseline": base_metrics,
+        "xgboost": xgb_metrics,
+        "best_params": best_params,
+        "threshold": round(threshold, 3),
+        "cost_fn": COST_FN,
+        "cost_fp": COST_FP,
+    }
+    (config.MODELS_DIR / "metrics.json").write_text(json.dumps(results, indent=2))
     return results
 
 

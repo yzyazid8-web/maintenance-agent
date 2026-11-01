@@ -24,15 +24,17 @@ class Deps:
     metrics: dict
     kg: KnowledgeGraph  # graphe FMEA (modes -> causes / actions)
     memory: EpisodicMemory  # mémoire
+    calibrator: object  # IsotonicRegression : score brut -> probabilité calibrée
 
 
 def build_deps() -> Deps:
     """Charge le pipeline, les métriques et le risque out-of-fold (hors-échantillon)."""
     pipe = joblib.load(config.MODELS_DIR / "pipeline.joblib")
+    calibrator = joblib.load(config.MODELS_DIR / "calibrator.joblib")
     metrics = json.loads((config.MODELS_DIR / "metrics.json").read_text())
     df = load_data()
     X = df.drop(columns=[config.TARGET])
-    # Risque affiché = prédictions out-of-fold 
+    # Risque affiché = prédictions out-of-fold calibrées (hors-échantillon + probabilité honnête).
     oof = pd.read_csv(config.MODELS_DIR / "oof_scores.csv", index_col="machine_id")
     scored = df.assign(risk=oof["risk"].to_numpy())
     return Deps(
@@ -42,6 +44,7 @@ def build_deps() -> Deps:
         metrics=metrics,
         kg=KnowledgeGraph(),
         memory=EpisodicMemory(),
+        calibrator=calibrator,
     )
 
 
@@ -80,15 +83,15 @@ def whatif(deps: Deps, machine_id: int, overrides: dict) -> dict:
     Tolère les noms SHAP ('num__torque_nm') ; n'applique que les colonnes connues.
     """
     row = deps.X.loc[[machine_id]].copy()
-    # before/after avec le mme modèle de service 
-    before = float(deps.pipe.predict_proba(row)[:, 1][0])
+    # before/after : même modèle de service + même calibrateur -> probabilités comparables.
+    before = float(deps.calibrator.predict(deps.pipe.predict_proba(row)[:, 1])[0])
     applied = {}
     for key, value in overrides.items():
         col = _clean(key)
         if col in deps.X.columns:
             row[col] = value
             applied[col] = value
-    after = float(deps.pipe.predict_proba(row)[:, 1][0])
+    after = float(deps.calibrator.predict(deps.pipe.predict_proba(row)[:, 1])[0])
     return {
         "risk_before": round(before, 4),
         "risk_after": round(after, 4),

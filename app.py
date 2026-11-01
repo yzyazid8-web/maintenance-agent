@@ -126,8 +126,14 @@ def _(mo):
 
 
 @app.cell
-def _(mo):
-    threshold = mo.ui.slider(0.05, 0.95, value=0.5, step=0.05, label="Seuil de risque")
+def _(metrics, mo):
+    threshold = mo.ui.slider(
+        0.01,
+        0.95,
+        value=round(metrics["threshold"], 2),
+        step=0.01,
+        label=f"Seuil de risque (défaut = seuil optimal par coût {metrics['cost_fn']:.0f}:{metrics['cost_fp']:.0f})",
+    )
     threshold
     return (threshold,)
 
@@ -164,6 +170,34 @@ def _(mo, scored, threshold):
     )
     display
     return (at_risk,)
+
+
+@app.cell
+def _(mo):
+    mo.md("### Fiabilité des probabilités (calibration)")
+    return
+
+
+@app.cell
+def _(C_SAIN, MUTED, plt, scored):
+    from sklearn.calibration import calibration_curve
+
+    _frac, _mean = calibration_curve(
+        scored["machine_failure"].to_numpy(),
+        scored["risk"].to_numpy(),
+        n_bins=10,
+        strategy="quantile",
+    )
+    _fig, _ax = plt.subplots(figsize=(4.5, 4))
+    _ax.plot([0, 1], [0, 1], "--", color=MUTED, linewidth=1, label="parfaitement calibré")
+    _ax.plot(_mean, _frac, "o-", color=C_SAIN, label="modèle")
+    _ax.set_xlabel("Probabilité prédite")
+    _ax.set_ylabel("Taux de panne observé")
+    _ax.set_title("Courbe de fiabilité (probas calibrées, out-of-fold)")
+    _ax.legend(fontsize=8)
+    _fig.tight_layout()
+    _ax
+    return
 
 
 @app.cell

@@ -15,5 +15,8 @@
     "colsample_bytree": 0.7554709158757928,
     "min_child_weight": 3,
     "reg_lambda": 2.0651425578959257
-  }
+  },
+  "threshold": 0.06,
+  "cost_fn": 10.0,
+  "cost_fp": 1.0
 }
