@@ -20,12 +20,12 @@
     "roc_auc_temporal": 0.978,
     "n_pos_temporal": 39
   },
-  "threshold": 0.06,
+  "threshold": 0.27,
   "baseline": {
     "xgboost_at_threshold": {
-      "precision": 0.607,
-      "recall": 0.879,
-      "alerts": 491
+      "precision": 0.724,
+      "recall": 0.853,
+      "alerts": 399
     },
     "rules_all_modes": {
       "precision": 0.329,
@@ -41,7 +41,7 @@
       "TWF": {
         "n": 46,
         "rules": 0.96,
-        "xgb": 0.33
+        "xgb": 0.15
       },
       "HDF": {
         "n": 115,
@@ -56,12 +56,12 @@
       "OSF": {
         "n": 98,
         "rules": 1.0,
-        "xgb": 0.99
+        "xgb": 0.98
       },
       "RNF": {
         "n": 19,
         "rules": 0.11,
-        "xgb": 0.05
+        "xgb": 0.0
       }
     }
   }

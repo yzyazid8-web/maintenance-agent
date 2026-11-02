@@ -10,13 +10,13 @@ import mlflow
 import numpy as np
 import optuna
 import pandas as pd
-from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score, roc_auc_score
 from sklearn.model_selection import StratifiedKFold, cross_val_predict, cross_val_score
 from xgboost import XGBClassifier
 
 from src import config
+from src.calibration import PlattCalibrator
 from src.data import load_data, split_data
 from src.features import build_pipeline
 
@@ -132,17 +132,23 @@ def run(n_trials: int = 30) -> dict:
     config.MODELS_DIR.mkdir(parents=True, exist_ok=True)
     joblib.dump(pipe, config.MODELS_DIR / "pipeline.joblib")
 
-    # Risque out-of-fold brut (hors-échantillon), puis calibration
+    # Risque out-of-fold brut (hors-échantillon), puis calibration sigmoïde (Platt).
     y_all = df[config.TARGET].to_numpy()
     raw_oof = _oof_scores(df, best_params)["risk"].to_numpy()
-    calibrator = IsotonicRegression(out_of_bounds="clip").fit(raw_oof, y_all)
-    cal_oof = calibrator.predict(raw_oof)
+
+    # Affichage / seuil / courbe de fiabilité : calibration CROSS-FIT 
+    cal_oof = np.zeros_like(raw_oof, dtype=float)
+    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=config.SEED)
+    for tr, te in skf.split(raw_oof.reshape(-1, 1), y_all):
+        cal_oof[te] = PlattCalibrator().fit(raw_oof[tr], y_all[tr]).predict(raw_oof[te])
+
+    # Calibrateur SERVI (what-if) : ajusté sur tout l'OOF
+    calibrator = PlattCalibrator().fit(raw_oof, y_all)
     joblib.dump(calibrator, config.MODELS_DIR / "calibrator.joblib")
-    pd.DataFrame({"risk": cal_oof}, index=df.index).to_csv(
+    pd.DataFrame({"risk": cal_oof, "raw": raw_oof}, index=df.index).to_csv(
         config.MODELS_DIR / "oof_scores.csv", index_label="machine_id"
     )
 
-    # Seuil choisi par coût métier (sur les probabilités calibrées)
     threshold = _optimal_threshold(y_all, cal_oof)
 
     results = {

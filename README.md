@@ -137,19 +137,20 @@ de trois règles codées à la main (`src/agent/knowledge_graph.py`) les retrouv
 
 | Détection de panne | Précision | Rappel | Alertes |
 |---|---|---|---|
-| Règles FMEA fortes (HDF + PWF + OSF) | **1,00** | 0,85 | 287 |
-| XGBoost (seuil par coût) | 0,61 | 0,88 | 491 |
+| Règles FMEA fortes (HDF + PWF + OSF) | **1,00** | 0,85 | **287** |
+| XGBoost (seuil par coût) | 0,72 | 0,85 | 399 |
 
-Autrement dit, **sur ce dataset synthétique, trois règles battent le ML en précision** (1,00 vs 0,61) :
-XGBoost ne gagne que **+3 points de rappel, au prix de ~70 % d'alertes en plus**. C'est logique et il
-faut l'assumer — les labels sont fabriqués par ces seuils, le modèle ne fait que les réapprendre.
+Autrement dit, **sur ce dataset synthétique, trois règles font mieux que le ML** : à rappel quasi
+identique (~0,85), elles ont une **meilleure précision** (1,00 vs 0,72) **et génèrent moins d'alertes**
+(287 vs 399). C'est logique et il faut l'assumer — les labels sont fabriqués par ces seuils, le modèle
+ne fait que les réapprendre.
 
 **Alors pourquoi un modèle ?** Parce que l'objectif n'est pas de battre les règles sur AI4I, mais de
 fournir ce qu'une règle binaire ne donne pas : un **score de risque calibré et classable** (0–100 %),
 seul moyen de **prioriser**, et d'alimenter le seuil réglable, le SHAP, le what-if et l'agent. Le
 modèle est le **moteur** ; la contribution du projet est la **chaîne produit** autour. *(Par mode :
-les règles battent même XGBoost sur TWF, 0,96 vs 0,33 ; les pannes aléatoires RNF sont imprévisibles
-pour les deux, ~0,05–0,11 — plafond du dataset.)*
+les règles battent largement XGBoost sur TWF, 0,96 vs 0,15 ; les pannes aléatoires RNF sont
+imprévisibles pour les deux, ~0 — plafond du dataset.)*
 
 *(Tous les chiffres ci-dessus : `python -m src.report_metrics` → `models/report_metrics.json`.
 Évaluation de l'agent : `eval/report.md`, via `python -m src.agent.eval`.)*

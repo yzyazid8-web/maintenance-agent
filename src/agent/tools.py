@@ -34,9 +34,9 @@ def build_deps() -> Deps:
     metrics = json.loads((config.MODELS_DIR / "metrics.json").read_text())
     df = load_data()
     X = df.drop(columns=[config.TARGET])
-    # Risque affiché = prédictions out-of-fold calibrées
+    # Risque affiché = prédictions out-of-fold calibrées (+ score brut pour départager les ex-æquo)
     oof = pd.read_csv(config.MODELS_DIR / "oof_scores.csv", index_col="machine_id")
-    scored = df.assign(risk=oof["risk"].to_numpy())
+    scored = df.assign(risk=oof["risk"].to_numpy(), risk_raw=oof["raw"].to_numpy())
     return Deps(
         pipe=pipe,
         X=X,
@@ -126,7 +126,8 @@ def whatif(deps: Deps, machine_id: int, overrides: dict) -> dict:
 
 def top_risk_machines(deps: Deps, n: int = 5) -> list[dict]:
     """Les n machines les plus à risque (index + score)"""
-    top = deps.scored.sort_values("risk", ascending=False).head(n)
+    # Tri par risque calibré, départage par score brut -> ordre déterministe même en cas d'ex-æquo.
+    top = deps.scored.sort_values(["risk", "risk_raw"], ascending=False).head(n)
     return [{"machine_id": int(i), "risk": round(float(r), 4)} for i, r in top["risk"].items()]
 
 

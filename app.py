@@ -57,7 +57,7 @@ def _(df):
     X = df.drop(columns=["machine_failure"])
     # Risque affiché = prédictions out-of-fold (hors-échantillon), pas un score sur les données vues.
     _oof = _pd.read_csv(_MODELS_DIR / "oof_scores.csv", index_col="machine_id")
-    scored = df.assign(risk=_oof["risk"].to_numpy())
+    scored = df.assign(risk=_oof["risk"].to_numpy(), risk_raw=_oof["raw"].to_numpy())
     return X, scored
 
 
@@ -159,7 +159,8 @@ def _(metrics, mo, scored, threshold):
 def _(mo, scored, threshold):
     at_risk = (
         scored[scored["risk"] >= threshold.value]
-        .sort_values("risk", ascending=False)
+        .sort_values(["risk", "risk_raw"], ascending=False)  # départage les ex-æquo
+        .drop(columns=["risk_raw"])
         .round({"risk": 3})
     )
     display = mo.vstack(
@@ -193,7 +194,7 @@ def _(C_SAIN, MUTED, plt, scored):
     _ax.plot(_mean, _frac, "o-", color=C_SAIN, label="modèle")
     _ax.set_xlabel("Probabilité prédite")
     _ax.set_ylabel("Taux de panne observé")
-    _ax.set_title("Courbe de fiabilité (probas calibrées, out-of-fold)")
+    _ax.set_title("Courbe de fiabilité (sigmoïde, calibration cross-fit hors-échantillon)")
     _ax.legend(fontsize=8)
     _fig.tight_layout()
     _ax
