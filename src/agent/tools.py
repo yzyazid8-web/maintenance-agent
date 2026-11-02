@@ -34,7 +34,7 @@ def build_deps() -> Deps:
     metrics = json.loads((config.MODELS_DIR / "metrics.json").read_text())
     df = load_data()
     X = df.drop(columns=[config.TARGET])
-    # Risque affiché = prédictions out-of-fold calibrées (hors-échantillon + probabilité honnête).
+    # Risque affiché = prédictions out-of-fold calibrées 
     oof = pd.read_csv(config.MODELS_DIR / "oof_scores.csv", index_col="machine_id")
     scored = df.assign(risk=oof["risk"].to_numpy())
     return Deps(
@@ -83,8 +83,8 @@ def whatif(deps: Deps, machine_id: int, overrides: dict) -> dict:
     Tolère les noms SHAP ('num__torque_nm') ; n'applique que les colonnes connues.
     """
     row = deps.X.loc[[machine_id]].copy()
-    # before/after : meme modèle de service + meme calibrateur -> probabilités comparables.
-    before = float(deps.calibrator.predict(deps.pipe.predict_proba(row)[:, 1])[0])
+    risk_before = float(deps.scored.loc[machine_id, "risk"])
+    served_before = float(deps.calibrator.predict(deps.pipe.predict_proba(row)[:, 1])[0])
     modes_before = deps.kg.link_modes(row.iloc[0].to_dict())
     applied, out_of_domain = {}, []
     for key, value in overrides.items():
@@ -103,12 +103,15 @@ def whatif(deps: Deps, machine_id: int, overrides: dict) -> dict:
                     "train_max": round(hi, 2),
                 }
             )
-    after = float(deps.calibrator.predict(deps.pipe.predict_proba(row)[:, 1])[0])
+    served_after = float(deps.calibrator.predict(deps.pipe.predict_proba(row)[:, 1])[0])
+    delta = served_after - served_before
+    risk_after = min(1.0, max(0.0, risk_before + delta))
     # Modes FMEA recalculés sur la ligne modifiée
     modes_after = deps.kg.link_modes(row.iloc[0].to_dict())
     result = {
-        "risk_before": round(before, 4),
-        "risk_after": round(after, 4),
+        "risk_before": round(risk_before, 4),
+        "risk_after": round(risk_after, 4),
+        "delta": round(delta, 4),
         "applied": applied,
         "modes_before": modes_before,
         "modes_after": modes_after,

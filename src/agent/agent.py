@@ -78,7 +78,8 @@ def build_agent() -> Agent:
     def whatif(ctx: RunContext[Deps], machine_id: int, overrides: dict[str, float]) -> dict:
         """Re-score une machine en modifiant des variables BRUTES. Modifiables :
         air_temp_k, process_temp_k, rotational_speed_rpm, torque_nm, tool_wear_min.
-        Exemple d'overrides : {'torque_nm': 30}"""
+        Exemple d'overrides : {'torque_nm': 30}. risk_before = le risque AFFICHÉ de la machine ;
+        risk_after = ce risque + l'effet (delta) du modèle sur les variables modifiées."""
         _require_machine(ctx.deps, machine_id)
         valid = set(config.NUMERIC_FEATURES)  # 'type' (catégorielle) non modifiable
         unknown = [k for k in overrides if k.split("__", 1)[-1] not in valid]

@@ -30,3 +30,10 @@ def test_tools():
     wi = whatif(deps, mid, {"num__torque_nm": 20.0})
     assert {"risk_before", "risk_after", "applied"} <= set(wi)
     assert wi["applied"] == {"torque_nm": 20.0}
+
+
+def test_whatif_before_equals_displayed_risk():
+    deps = build_deps()
+    for mid in deps.scored.sort_values("risk", ascending=False).index[:5]:
+        mid = int(mid)
+        assert whatif(deps, mid, {})["risk_before"] == predict_risk(deps, mid)

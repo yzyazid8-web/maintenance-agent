@@ -246,7 +246,10 @@ def _(C_PANNE, C_SAIN, MUTED, X, explain_row, machine, mo, pipe, plt, scored):
         _fig, _ax = plt.subplots(figsize=(6, 4))
         _ax.barh(_names, _vals, color=_colors)
         _ax.axvline(0, color=MUTED, linewidth=0.8)
-        _ax.set_title(f"Machine {_idx} — risque {scored.loc[_idx, 'risk']:.1%}")
+        _ax.set_title(
+            f"Machine {_idx} — risque affiché {scored.loc[_idx, 'risk']:.1%} "
+            f"· lecture SHAP du modèle servi"
+        )
         _ax.grid(axis="y", visible=False)
         _fig.tight_layout()
         out = _ax
