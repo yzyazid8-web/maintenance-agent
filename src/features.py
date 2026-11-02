@@ -14,7 +14,7 @@ NUMERIC = config.NUMERIC_FEATURES + ENGINEERED
 CATEGORICAL = config.CATEGORICAL_FEATURES  # ["type"]
 
 
-# Formules physiques 
+# Formules physiques
 def power_w(row):
     """Puissance mécanique (W) = couple x vitesse angulaire."""
     return row["torque_nm"] * row["rotational_speed_rpm"] * 2 * np.pi / 60

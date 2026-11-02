@@ -15,6 +15,10 @@ select = ["E", "F", "I", "UP", "B"]
 # B018 : les sorties de cellules marimo (dernière expression) sont intentionnelles.
 ignore = ["E501", "B018"]
 
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true   # stubs tiers (chromadb, sklearn, xgboost…) absents/partiels
+
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]

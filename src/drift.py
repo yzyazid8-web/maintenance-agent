@@ -1,11 +1,7 @@
-"""Détection de dérive (drift) des données : PSI, Wasserstein normalisé, domain classifier.
-
-`simulate_drift` fabrique un batch de "production" dérivé  - c'est une
-dérive covariable SIMULÉE, pour simuler la surveillance.
-"""
+"""Détection de dérive (drift) des données : PSI, Wasserstein normalisé, domain classifier."""
 
 import numpy as np
-from scipy.stats import wasserstein_distance
+from scipy.stats import chi2_contingency, wasserstein_distance
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
@@ -15,7 +11,6 @@ from src import config
 PSI_MODERATE = 0.1
 PSI_SIGNIFICANT = 0.25
 
-# Verdict global basé sur l'AUC du domain classifier (0,5 = aucune dérive). Seuils ICI, pas dans l'UI.
 DRIFT_AUC_MODERATE = 0.6
 DRIFT_AUC_STRONG = 0.75
 
@@ -48,6 +43,19 @@ def wasserstein_norm(reference, current) -> float:
     """Distance de Wasserstein normalisée par l'écart-type de la référence (seuil 0,1)"""
     scale = float(np.std(reference)) or 1.0
     return float(wasserstein_distance(reference, current) / scale)
+
+
+def categorical_drift(reference, current) -> dict:
+    """Dérive d'une variable catégorielle."""
+    cats = sorted(set(reference) | set(current))
+    ref_counts = [int(np.sum(np.asarray(reference) == c)) for c in cats]
+    cur_counts = [int(np.sum(np.asarray(current) == c)) for c in cats]
+    try:
+        p = float(chi2_contingency([ref_counts, cur_counts])[1])
+    except ValueError:  # effectif nul / une seule catégorie -> test non défini
+        p = 1.0
+    drifted = p < 0.05
+    return {"p_value": round(p, 4), "drifted": drifted, "status": "🔴" if drifted else "🟢"}
 
 
 def _status(psi_value: float) -> str:
@@ -96,9 +104,17 @@ def drift_report(reference_df, current_df, features=None) -> dict:
                 "status": _status(p),
             }
         )
+    # Variables catégorielles (ex. `type`) : surveillées par un chi-2, pas seulement les numériques.
+    categorical = []
+    for feat in config.CATEGORICAL_FEATURES:
+        if feat in reference_df.columns and feat in current_df.columns:
+            res = categorical_drift(reference_df[feat].to_numpy(), current_df[feat].to_numpy())
+            categorical.append({"feature": feat, **res})
+
     auc = round(domain_classifier_auc(reference_df, current_df, features), 3)
     return {
         "per_feature": per_feature,
+        "categorical": categorical,
         "domain_classifier_auc": auc,
         "verdict": drift_verdict(auc),
     }

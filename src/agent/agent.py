@@ -77,7 +77,7 @@ def trim_history(messages: list):
     return messages[starts[-MAX_HISTORY_TURNS] :]
 
 
-def build_agent() -> Agent:
+def build_agent() -> Agent[Deps, str]:
     agent = Agent(build_model(), deps_type=Deps, system_prompt=SYSTEM_PROMPT, retries=2)
 
     @agent.tool
@@ -119,7 +119,9 @@ def build_agent() -> Agent:
 
     @agent.tool
     def top_risk_machines(ctx: RunContext[Deps], n: int = 5) -> list[dict]:
-        """Les n machines les plus à risque"""
+        """Les n machines les plus à risque (n entre 1 et 50)"""
+        if not 1 <= n <= 50:
+            raise ModelRetry("n doit être entre 1 et 50.")
         return tools.top_risk_machines(ctx.deps, n)
 
     @agent.tool
@@ -149,7 +151,10 @@ def build_agent() -> Agent:
     @agent.tool
     def explain_mode(ctx: RunContext[Deps], mode: str) -> dict:
         """Décrit un mode de panne (TWF, HDF, PWF, OSF, RNF) : cause, signature, actions"""
-        return ctx.deps.kg.describe_mode(mode.upper())
+        described = ctx.deps.kg.describe_mode(mode.upper())
+        if not described:
+            raise ModelRetry(f"Mode '{mode}' inconnu. Modes valides : {config.FAILURE_MODE_COLS}.")
+        return described
 
     @agent.tool
     def search_knowledge(ctx: RunContext[Deps], query: str) -> dict:
@@ -168,6 +173,8 @@ def build_agent() -> Agent:
         ctx: RunContext[Deps], query: str, k: int = 3, machine_id: int | None = None
     ) -> list[dict]:
         """Retrouve des notes passées par similarité (avec leur date). Filtre par machine_id si fourni."""
+        if not 1 <= k <= 20:
+            raise ModelRetry("k doit être entre 1 et 20.")
         where = {"machine_id": machine_id} if machine_id is not None else None
         return ctx.deps.memory.recall(query, k, where=where)
 

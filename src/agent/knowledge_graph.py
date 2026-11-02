@@ -29,7 +29,7 @@ class KnowledgeGraph:
         self.ontology = yaml.safe_load(path.read_text(encoding="utf-8"))
         self.graph = self._build_graph()
         self._embed_fn = embed_fn
-        self._collection = None  # index vectoriel chromadb
+        self._collection: chromadb.Collection | None = None  # index vectoriel chromadb
 
     def _build_graph(self) -> nx.DiGraph:
         g = nx.DiGraph()
@@ -110,15 +110,16 @@ class KnowledgeGraph:
         self._collection.add(
             ids=nodes,
             documents=texts,
-            embeddings=self._embed(texts),
+            embeddings=self._embed(texts),  # type: ignore[arg-type]  # list[list[float]] accepté
             metadatas=[{"kind": self.graph.nodes[n]["kind"]} for n in nodes],
         )
 
     def semantic_search(self, query: str, k: int = 3) -> list[str]:
         """Nœuds du graphe les plus proches sémantiquement de la question."""
         self._ensure_index()
+        assert self._collection is not None  # garanti par _ensure_index
         k = min(k, self.graph.number_of_nodes())
-        res = self._collection.query(query_embeddings=self._embed([query]), n_results=k)
+        res = self._collection.query(query_embeddings=self._embed([query]), n_results=k)  # type: ignore[arg-type]
         return res["ids"][0]
 
     def expand_subgraph(self, seeds, hops: int = 2) -> nx.Graph:

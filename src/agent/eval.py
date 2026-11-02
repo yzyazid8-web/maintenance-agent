@@ -408,7 +408,7 @@ if __name__ == "__main__":
 
     from src.agent.llm import resolve_agent, resolve_judge
 
-    runs = int(os.environ.get("EVAL_RUNS", "3")) 
+    runs = int(os.environ.get("EVAL_RUNS", "3"))
     report = to_markdown(
         evaluate(runs=runs),
         judge_model=resolve_judge()[0],

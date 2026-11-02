@@ -35,7 +35,7 @@ class EpisodicMemory:
         self.collection.add(
             ids=[episode_id],
             documents=[text],
-            embeddings=self._embed([text]),
+            embeddings=self._embed([text]),  # type: ignore[arg-type]  # list[list[float]] accepté
             metadatas=[meta],
         )
         return episode_id
@@ -45,12 +45,13 @@ class EpisodicMemory:
         count = self.collection.count()
         if count == 0:
             return []
-        kwargs = {"query_embeddings": self._embed([query]), "n_results": min(k, count)}
-        if where:
-            kwargs["where"] = where
-        res = self.collection.query(**kwargs)
-        docs = res["documents"][0]
-        dists = res["distances"][0]
+        res = self.collection.query(
+            query_embeddings=self._embed([query]),  # type: ignore[arg-type]
+            n_results=min(k, count),
+            where=where or None,  # type: ignore[arg-type]
+        )
+        docs = (res["documents"] or [[]])[0]
+        dists = (res["distances"] or [[]])[0]
         metas = (res.get("metadatas") or [[]])[0] or [{}] * len(docs)
         return [
             {"text": d, "distance": round(float(dist), 4), **(m or {})}

@@ -10,6 +10,7 @@ from sklearn.pipeline import Pipeline
 from src import config
 from src.agent.knowledge_graph import KnowledgeGraph
 from src.agent.memory import EpisodicMemory
+from src.calibration import PlattCalibrator
 from src.data import load_data
 from src.explain import explain_row, global_importance
 
@@ -24,7 +25,7 @@ class Deps:
     metrics: dict
     kg: KnowledgeGraph  # graphe FMEA (modes -> causes / actions)
     memory: EpisodicMemory  # mémoire
-    calibrator: object  # IsotonicRegression : score brut -> probabilité calibrée
+    calibrator: PlattCalibrator  # score brut -> probabilité calibrée
 
 
 def build_deps() -> Deps:
@@ -34,7 +35,7 @@ def build_deps() -> Deps:
     metrics = json.loads((config.MODELS_DIR / "metrics.json").read_text())
     df = load_data()
     X = df.drop(columns=[config.TARGET])
-    # Risque affiché = prédictions out-of-fold calibrées (+ score brut pour départager les ex-æquo)
+    # Risque affiché = prédictions out-of-fold calibrées
     oof = pd.read_csv(config.MODELS_DIR / "oof_scores.csv", index_col="machine_id")
     scored = df.assign(risk=oof["risk"].to_numpy(), risk_raw=oof["raw"].to_numpy())
     return Deps(
@@ -126,7 +127,7 @@ def whatif(deps: Deps, machine_id: int, overrides: dict) -> dict:
 
 def top_risk_machines(deps: Deps, n: int = 5) -> list[dict]:
     """Les n machines les plus à risque (index + score)"""
-    # Tri par risque calibré, départage par score brut -> ordre déterministe même en cas d'ex-æquo.
+    # Tri par risque calibré, départage par score brut -> ordre déterministe même en cas d'ex-aequo.
     top = deps.scored.sort_values(["risk", "risk_raw"], ascending=False).head(n)
     return [{"machine_id": int(i), "risk": round(float(r), 4)} for i, r in top["risk"].items()]
 

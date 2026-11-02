@@ -38,7 +38,7 @@ Ce projet, de bout en bout :
   garde-fou **champion/challenger** (un nouveau modèle n'est promu que s'il égale ou dépasse l'actuel ;
   chaque run est journalisé), suivi **MLflow**, **Docker**, **CI** GitHub Actions (lint + tests + build).
 - **ML & explicabilité** : XGBoost sur données déséquilibrées, **SHAP** (global + local).
-- **Rigueur** : séparation train/serving, tests (**27** unitaires), code typé et linté.
+- **Rigueur** : séparation train/serving, tests unitaires (**pytest** + couverture), **typage vérifié (mypy)** et lint/format (**ruff**) — le tout en CI.
 
 **Résultats clés :** PR-AUC **0,87 ± 0,01** en validation croisée (0,90 sur le jeu de test,
 **0,78** en découpage par ordre d'arrivée — plus réaliste) · ROC-AUC **0,98** · agent évalué sur

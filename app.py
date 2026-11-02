@@ -222,12 +222,14 @@ def _(C_SAIN, X, global_importance, pipe, plt):
 
 
 @app.cell
-def _(at_risk, mo):
-    _options = at_risk.head(30).index.astype(str).tolist()
-    machine = mo.ui.dropdown(
-        _options,
-        value=_options[0] if _options else None,
-        label="Inspecter une machine (top 30 à risque)",
+def _(mo, scored):
+    _max = int(scored.index.max())
+    machine = mo.ui.number(
+        start=0,
+        stop=_max,
+        step=1,
+        value=int(scored["risk"].idxmax()),  # par défaut : la machine la plus à risque
+        label=f"Inspecter n'importe quelle machine (index 0–{_max})",
     )
     machine
     return (machine,)
@@ -235,8 +237,8 @@ def _(at_risk, mo):
 
 @app.cell
 def _(C_PANNE, C_SAIN, MUTED, X, explain_row, machine, mo, pipe, plt, scored):
-    if machine.value is None:
-        out = mo.md("_Aucune machine au-dessus du seuil : baisse le seuil pour en inspecter une._")
+    if machine.value is None or int(machine.value) not in scored.index:
+        out = mo.md("_Saisis un index de machine valide pour l'inspecter._")
     else:
         _idx = int(machine.value)
         _contrib = explain_row(pipe, X.loc[[_idx]])
@@ -296,10 +298,17 @@ def _(NUMERIC_FEATURES, X, drift_report, mo, pd, run_drift, severity, simulate_d
         _report = drift_report(X, simulate_drift(X, severity.value), NUMERIC_FEATURES)
         _auc = _report["domain_classifier_auc"]
         _verdict = _report["verdict"]  # seuils définis dans src/drift.py, pas dans l'UI
+        _cat = (
+            " · ".join(
+                f"{c['feature']} {c['status']} (p={c['p_value']})" for c in _report["categorical"]
+            )
+            or "—"
+        )
         _out = mo.vstack(
             [
                 mo.md(f"**Dérive globale (AUC domain classifier) : {_auc:.2f} → {_verdict}**"),
                 mo.ui.table(pd.DataFrame(_report["per_feature"]), page_size=5),
+                mo.md(f"**Catégorielles (χ²)** : {_cat}"),
             ]
         )
     _out
