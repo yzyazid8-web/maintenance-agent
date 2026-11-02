@@ -96,10 +96,15 @@ def whatif(deps: Deps, machine_id: int, overrides: dict) -> dict:
         lo, hi = float(deps.X[col].min()), float(deps.X[col].max())
         if value < lo or value > hi:
             out_of_domain.append(
-                {"feature": col, "value": value, "train_min": round(lo, 2), "train_max": round(hi, 2)}
+                {
+                    "feature": col,
+                    "value": value,
+                    "train_min": round(lo, 2),
+                    "train_max": round(hi, 2),
+                }
             )
     after = float(deps.calibrator.predict(deps.pipe.predict_proba(row)[:, 1])[0])
-    # Modes FMEA recalculés sur la ligne modifiée 
+    # Modes FMEA recalculés sur la ligne modifiée
     modes_after = deps.kg.link_modes(row.iloc[0].to_dict())
     result = {
         "risk_before": round(before, 4),

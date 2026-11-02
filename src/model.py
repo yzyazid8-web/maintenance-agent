@@ -132,7 +132,7 @@ def run(n_trials: int = 30) -> dict:
     config.MODELS_DIR.mkdir(parents=True, exist_ok=True)
     joblib.dump(pipe, config.MODELS_DIR / "pipeline.joblib")
 
-    # Risque out-of-fold brut (hors-échantillon), puis calibration 
+    # Risque out-of-fold brut (hors-échantillon), puis calibration
     y_all = df[config.TARGET].to_numpy()
     raw_oof = _oof_scores(df, best_params)["risk"].to_numpy()
     calibrator = IsotonicRegression(out_of_bounds="clip").fit(raw_oof, y_all)
