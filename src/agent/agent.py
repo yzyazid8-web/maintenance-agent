@@ -1,4 +1,4 @@
-"""Agent ReAct (Pydantic AI) : enregistre les outils et pilote le raisonnement"""
+"""Agent à outils (Pydantic AI) : enregistre les outils et pilote le raisonnement"""
 
 from pydantic_ai import Agent, ModelRetry, RunContext
 
