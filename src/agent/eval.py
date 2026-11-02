@@ -1,8 +1,4 @@
-"""Évaluation de l'agent : précision d'appel d'outil (déterministe) + groundedness (LLM-as-judge).
-
-Les helpers de chargement/extraction sont légers (testables sans LLM). L'évaluation complète
-appelle le LLM -> script manuel :  python -m src.agent.eval
-"""
+"""Évaluation de l'agent : précision d'appel d'outil (déterministe) + groundedness (LLM-as-judge)."""
 
 import yaml
 from pydantic import BaseModel, Field
@@ -62,9 +58,9 @@ JUDGE_PROMPT = (
 def build_judge():
     from pydantic_ai import Agent
 
-    from src.agent.llm import build_model
+    from src.agent.llm import build_judge_model
 
-    return Agent(build_model(), output_type=GroundednessScore, system_prompt=JUDGE_PROMPT)
+    return Agent(build_judge_model(), output_type=GroundednessScore, system_prompt=JUDGE_PROMPT)
 
 
 def _judge(judge_agent, question: str, answer: str, trace: list[dict]) -> GroundednessScore:
@@ -126,7 +122,7 @@ def evaluate(pause: float = 2.0) -> list[dict]:
     return rows
 
 
-def to_markdown(rows: list[dict]) -> str:
+def to_markdown(rows: list[dict], judge_model: str | None = None) -> str:
     n = len(rows)
     tool_ok = sum(r["tool_ok"] for r in rows)
     avg_g = sum(r["groundedness"] for r in rows) / n
@@ -135,6 +131,12 @@ def to_markdown(rows: list[dict]) -> str:
         "",
         f"- Précision d'appel d'outil : **{tool_ok / n:.0%}** ({tool_ok}/{n})",
         f"- Groundedness moyenne (1-5) : **{avg_g:.2f}**",
+    ]
+    if judge_model:
+        lines.append(
+            f"- Juge (LLM-as-judge) : **{judge_model}** — modèle distinct de l'agent (anti-biais)."
+        )
+    lines += [
         "",
         "| Question | Outil attendu | Outil OK | Groundedness |",
         "|---|---|:--:|:--:|",
@@ -148,7 +150,9 @@ def to_markdown(rows: list[dict]) -> str:
 
 
 if __name__ == "__main__":
-    report = to_markdown(evaluate())
+    from src.agent.llm import resolve_judge
+
+    report = to_markdown(evaluate(), judge_model=resolve_judge()[0])
     print(report)
     (config.ROOT / "eval" / "report.md").write_text(report, encoding="utf-8")
     print("\nRapport écrit : eval/report.md")

@@ -27,21 +27,42 @@ def _load_env_file() -> None:
         os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
-def build_model() -> OpenAIChatModel:
-    _load_env_file()
-    backend = os.environ.get("LLM_BACKEND", "groq").lower()
-
+def _build(model: str, backend: str) -> OpenAIChatModel:
+    """Client OpenAI-compatible (Groq ou Ollama) pour un modèle donné."""
     if backend == "ollama":
         provider = OpenAIProvider(
             base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
-            api_key="ollama",  # Ollama ignore la clé mais le client en exige une
+            api_key="ollama",
         )
-        return OpenAIChatModel(os.environ.get("OLLAMA_MODEL", "qwen2.5:3b"), provider=provider)
+        return OpenAIChatModel(model, provider=provider)
 
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
         raise RuntimeError(
-            "GROQ_API_KEY manquante. Renseigne-la dans .env, ou mets LLM_BACKEND=ollama"
+            "GROQ_API_KEY manquante. Renseigne-la dans .env, ou mets le backend sur ollama"
         )
     provider = OpenAIProvider(base_url=GROQ_BASE_URL, api_key=api_key)
-    return OpenAIChatModel(os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b"), provider=provider)
+    return OpenAIChatModel(model, provider=provider)
+
+
+def build_model() -> OpenAIChatModel:
+    """Modèle de l'AGENT, routé par LLM_BACKEND (groq par défaut)"""
+    _load_env_file()
+    backend = os.environ.get("LLM_BACKEND", "groq").lower()
+    default = "qwen2.5:3b" if backend == "ollama" else "openai/gpt-oss-120b"
+    env_var = "OLLAMA_MODEL" if backend == "ollama" else "GROQ_MODEL"
+    return _build(os.environ.get(env_var, default), backend)
+
+
+def resolve_judge() -> tuple[str, str]:
+    """(modèle, backend) du JUGE d'évaluation, volontairement distinct de l'agent."""
+    _load_env_file()
+    backend = os.environ.get("JUDGE_BACKEND", os.environ.get("LLM_BACKEND", "groq")).lower()
+    default = "llama3.1:8b" if backend == "ollama" else "qwen/qwen3.8-27b"
+    return os.environ.get("JUDGE_MODEL", default), backend
+
+
+def build_judge_model() -> OpenAIChatModel:
+    """Modèle JUGE de l'éval : famille différente de l'agent par défaut, pour éviter le
+    biais d'auto-complaisance (un LLM qui se note lui-même se sur-note)."""
+    return _build(*resolve_judge())

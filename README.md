@@ -79,7 +79,8 @@ Ce projet, à partir de mesures machine (couple, vitesse, usure outil, températ
   en NetworkX ; l'agent **diagnostique par seuils** puis lit les actions dans le graphe (anti-hallucination).
 - **Mémoire épisodique** : les diagnostics sont stockés (chromadb + embeddings) et rappelés par similarité.
 - **Guardrails** : refus déterministe des injections de prompt et des entrées invalides, avant tout appel LLM.
-- **Évaluation** : *tool-call accuracy* (déterministe) + *groundedness* notée par un **LLM-as-judge**.
+- **Évaluation** : *tool-call accuracy* (déterministe) + *groundedness* notée par un **LLM-as-judge**
+  — avec un **modèle juge distinct de l'agent** (famille différente) pour éviter le biais d'auto-complaisance.
 
 ---
 
