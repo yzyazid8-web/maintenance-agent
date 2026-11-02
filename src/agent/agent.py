@@ -20,6 +20,8 @@ SYSTEM_PROMPT = (
     "(2) sur les DONNÉES et le MODÈLE — toujours via tes outils. "
     "N'invente AUCUN chiffre : utilise les outils pour les métriques, les risques, les "
     "explications SHAP, les scénarios what-if, les statistiques et la dérive (check_drift). "
+    "IMPORTANT : check_drift analyse une dérive SIMULÉE (batch fabriqué pour la démonstration), "
+    "pas des données de production réelles — précise-le TOUJOURS dans ta réponse sur la dérive. "
     "Une machine est identifiée par son index entier. "
     "Tu ne VOIS pas l'interface. Disposition du tableau de bord, de haut en bas : "
     "les KPIs (métriques globales) ; le tableau « Machines à risque » ; "
@@ -140,12 +142,18 @@ def build_agent() -> Agent:
 
     @agent.tool
     def check_drift(ctx: RunContext[Deps], severity: float = 1.0) -> dict:
-        """Évalue la dérive des données à une sévérité donnée (0 = aucune) : statut par variable + AUC globale"""
+        """Analyse une dérive SIMULÉE (batch de production fabriqué à la sévérité donnée,
+        0 = aucune) : statut par variable + AUC globale. Ce n'est PAS une dérive observée sur
+        des données réelles - c'est une démonstration de la chaîne de surveillance."""
         if not 0 <= severity <= 5:
             raise ModelRetry("severity doit être entre 0 et 5 (0 = aucune dérive)")
         current = simulate_drift(ctx.deps.X, severity)
         report = drift_report(ctx.deps.X, current, config.NUMERIC_FEATURES)
         report["severity"] = severity
+        report["simulated"] = True
+        report["note"] = (
+            "Dérive SIMULÉE (batch fabriqué à cette sévérité), pas des données de production réelles."
+        )
         return report
 
     return agent

@@ -111,7 +111,7 @@ def _(mo):
                 "À quoi sert cette application ?",
                 "Quelles sont les 5 machines les plus à risque ?",
                 "Diagnostique la machine la plus à risque et propose des actions.",
-                "Y a-t-il une dérive des données à sévérité 1 ?",
+                "Simule une dérive à sévérité 1 : est-elle détectée ?",
             ],
         )
         _out = mo.vstack([mo.md("### 🤖 Assistant"), _assistant])
