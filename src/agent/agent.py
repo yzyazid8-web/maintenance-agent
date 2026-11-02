@@ -133,14 +133,19 @@ def build_agent() -> Agent:
         return ctx.deps.kg.graphrag(query)
 
     @agent.tool
-    def save_note(ctx: RunContext[Deps], text: str) -> dict:
-        """Mémorise un diagnostic ou une observation pour s'en souvenir plus tard"""
-        return {"saved": True, "id": ctx.deps.memory.remember(text)}
+    def save_note(ctx: RunContext[Deps], text: str, machine_id: int | None = None) -> dict:
+        """Mémorise un diagnostic / une observation (horodaté). Précise machine_id si la note
+        concerne une machine précise, pour pouvoir la retrouver par machine ensuite."""
+        meta = {"machine_id": machine_id} if machine_id is not None else None
+        return {"saved": True, "id": ctx.deps.memory.remember(text, meta)}
 
     @agent.tool
-    def recall_memory(ctx: RunContext[Deps], query: str, k: int = 3) -> list[dict]:
-        """Retrouve des diagnostics / observations passés liés à la requête."""
-        return ctx.deps.memory.recall(query, k)
+    def recall_memory(
+        ctx: RunContext[Deps], query: str, k: int = 3, machine_id: int | None = None
+    ) -> list[dict]:
+        """Retrouve des notes passées par similarité (avec leur date). Filtre par machine_id si fourni."""
+        where = {"machine_id": machine_id} if machine_id is not None else None
+        return ctx.deps.memory.recall(query, k, where=where)
 
     @agent.tool
     def check_drift(ctx: RunContext[Deps], severity: float = 1.0) -> dict:

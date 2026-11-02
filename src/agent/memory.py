@@ -2,6 +2,7 @@
 
 import uuid
 from collections.abc import Callable
+from datetime import UTC, datetime
 
 import chromadb
 
@@ -40,21 +41,32 @@ class EpisodicMemory:
         return self._embed_fn
 
     def remember(self, text: str, metadata: dict | None = None) -> str:
+        """Stocke un épisode HORODATÉ. metadata : ex. {'machine_id': 42, 'modes': 'OSF,TWF'}."""
         episode_id = uuid.uuid4().hex
-        kwargs = {"ids": [episode_id], "documents": [text], "embeddings": self._embed([text])}
+        meta = {"created_at": datetime.now(UTC).isoformat(timespec="seconds")}
         if metadata:
-            kwargs["metadatas"] = [metadata]
-        self.collection.add(**kwargs)
+            meta.update({k: v for k, v in metadata.items() if v is not None})
+        self.collection.add(
+            ids=[episode_id],
+            documents=[text],
+            embeddings=self._embed([text]),
+            metadatas=[meta],
+        )
         return episode_id
 
-    def recall(self, query: str, k: int = 3) -> list[dict]:
+    def recall(self, query: str, k: int = 3, where: dict | None = None) -> list[dict]:
+        """Retrouve des épisodes par similarité. `where` filtre par métadonnée (ex. {'machine_id': 42})."""
         count = self.collection.count()
         if count == 0:
             return []
-        res = self.collection.query(query_embeddings=self._embed([query]), n_results=min(k, count))
+        kwargs = {"query_embeddings": self._embed([query]), "n_results": min(k, count)}
+        if where:
+            kwargs["where"] = where
+        res = self.collection.query(**kwargs)
         docs = res["documents"][0]
         dists = res["distances"][0]
+        metas = (res.get("metadatas") or [[]])[0] or [{}] * len(docs)
         return [
-            {"text": d, "distance": round(float(dist), 4)}
-            for d, dist in zip(docs, dists, strict=False)
+            {"text": d, "distance": round(float(dist), 4), **(m or {})}
+            for d, dist, m in zip(docs, dists, metas, strict=False)
         ]

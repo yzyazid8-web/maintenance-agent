@@ -78,7 +78,8 @@ Ce projet, à partir de mesures machine (couple, vitesse, usure outil, températ
   via un client OpenAI-compatible routé par variable d'environnement.
 - **Knowledge Graph + GraphRAG** : ontologie FMEA (modes de panne → causes → signatures → actions)
   en NetworkX ; l'agent **diagnostique par seuils** puis lit les actions dans le graphe (anti-hallucination).
-- **Mémoire épisodique** : les diagnostics sont stockés (chromadb + embeddings) et rappelés par similarité.
+- **Mémoire épisodique** : les diagnostics sont stockés **horodatés** (chromadb + embeddings),
+  rappelés par **similarité** et **filtrables par machine** ; traités comme des notes utilisateur non vérifiées.
 - **Guardrails & modèle de menace** : un pré-filtre déterministe écarte les injections évidentes
   (réglé pour **0 faux positif** sur le vocabulaire métier). Mais le vrai rempart est **architectural** :
   tous les outils sont en **lecture seule** (seul `save_note` écrit, et son contenu est traité comme

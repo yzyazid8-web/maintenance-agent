@@ -23,3 +23,20 @@ def test_remember_and_recall(tmp_path):
 def test_recall_on_empty_memory(tmp_path):
     mem = EpisodicMemory(embed_fn=_fake_embed, path=tmp_path / "empty")
     assert mem.recall("quoi que ce soit") == []
+
+
+def test_remember_stamps_timestamp(tmp_path):
+    mem = EpisodicMemory(embed_fn=_fake_embed, path=tmp_path / "ts")
+    mem.remember("Machine 7 : usure OSF")
+    res = mem.recall("usure osf", k=1)
+    assert res and "created_at" in res[0]  # horodatage automatique
+
+
+def test_recall_filters_by_machine(tmp_path):
+    mem = EpisodicMemory(embed_fn=_fake_embed, path=tmp_path / "filter")
+    mem.remember("Machine 7 : usure OSF couple eleve", {"machine_id": 7})
+    mem.remember("Machine 12 : HDF temperature", {"machine_id": 12})
+
+    res = mem.recall("machine", k=5, where={"machine_id": 7})
+    assert len(res) == 1
+    assert res[0]["machine_id"] == 7
