@@ -1,29 +1,15 @@
 """Mémoire persistante : l'agent stocke et retrouve des diagnostics passés"""
 
 import uuid
-from collections.abc import Callable
 from datetime import UTC, datetime
 
 import chromadb
 
 from src import config
+from src.agent.embeddings import Embedder, default_embedder
 
 MEMORY_DIR = config.ROOT / "agent_memory"
 COLLECTION = "episodes"
-EMBED_MODEL = "all-MiniLM-L6-v2"
-
-Embedder = Callable[[list[str]], list[list[float]]]
-
-
-def _default_embedder() -> Embedder:
-    from sentence_transformers import SentenceTransformer
-
-    model = SentenceTransformer(EMBED_MODEL)
-
-    def embed(texts: list[str]) -> list[list[float]]:
-        return model.encode(list(texts), normalize_embeddings=True).tolist()
-
-    return embed
 
 
 class EpisodicMemory:
@@ -37,7 +23,7 @@ class EpisodicMemory:
     @property
     def _embed(self) -> Embedder:
         if self._embed_fn is None:
-            self._embed_fn = _default_embedder()
+            self._embed_fn = default_embedder()
         return self._embed_fn
 
     def remember(self, text: str, metadata: dict | None = None) -> str:

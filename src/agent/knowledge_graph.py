@@ -1,7 +1,6 @@
 """Knowledge graph FMEA : diagnostic déterministe (seuils) + GraphRAG (sémantique + multi-sauts)."""
 
 import math
-from collections.abc import Callable
 from pathlib import Path
 
 import chromadb
@@ -9,9 +8,9 @@ import networkx as nx
 import yaml
 
 from src import config
+from src.agent.embeddings import Embedder, default_embedder
 
 ONTOLOGY_PATH = config.ROOT / "knowledge" / "failure_modes.yaml"
-EMBED_MODEL = "all-MiniLM-L6-v2"
 
 # Champ YAML -> (relation d'arête, type de noeud)
 _RELATIONS = {
@@ -21,8 +20,6 @@ _RELATIONS = {
     "actions": ("corrige_par", "action"),
     "sensors": ("mesure_par", "capteur"),
 }
-
-Embedder = Callable[[list[str]], list[list[float]]]
 
 
 def _power_w(row) -> float:
@@ -35,17 +32,6 @@ def _delta_t(row) -> float:
 
 def _wear_x_torque(row) -> float:
     return row["tool_wear_min"] * row["torque_nm"]
-
-
-def _default_embedder() -> Embedder:
-    from sentence_transformers import SentenceTransformer
-
-    model = SentenceTransformer(EMBED_MODEL)
-
-    def embed(texts: list[str]) -> list[list[float]]:
-        return model.encode(list(texts), normalize_embeddings=True).tolist()
-
-    return embed
 
 
 class KnowledgeGraph:
@@ -123,7 +109,7 @@ class KnowledgeGraph:
     @property
     def _embed(self) -> Embedder:
         if self._embed_fn is None:
-            self._embed_fn = _default_embedder()
+            self._embed_fn = default_embedder()
         return self._embed_fn
 
     def _ensure_index(self) -> None:
@@ -160,8 +146,8 @@ class KnowledgeGraph:
             nodes |= frontier
         return self.graph.subgraph(nodes)
 
-    def graphrag(self, query: str, k: int = 3, hops: int = 2) -> dict:
-        """Récupère un sous-graphe pertinent pour la question et le sérialise pour le LLM."""
+    def graphrag(self, query: str, k: int = 3, hops: int = 1) -> dict:
+        """Récupère un sous-graphe pertinent et le sérialise pour le LLM, avec sa structure """
         seeds = self.semantic_search(query, k)
         sub = self.expand_subgraph(seeds, hops)
         modes = [n for n in sub.nodes if self.graph.nodes[n]["kind"] == "mode"]
@@ -173,11 +159,19 @@ class KnowledgeGraph:
             for field in ("causes", "symptoms", "components", "actions", "sensors"):
                 if d.get(field):
                     lines.append(f"- {field} : {', '.join(d[field])}")
-        if not modes:
+
+        # Structure du sous-graphe : triplets 
+        triplets = [f"{s} --{self.graph.edges[s, t]['rel']}--> {t}" for s, t in sub.edges]
+        if triplets:
+            lines.append("#### Relations (graphe)")
+            lines.extend(f"- {t}" for t in triplets)
+        if not modes and not triplets:
             lines = [f"- {self.graph.nodes[n]['text']}" for n in sub.nodes]
 
         return {
             "query": query,
             "seeds": list(seeds),
+            "modes": modes,
+            "relations": triplets,
             "context": "\n".join(lines) if lines else "Aucune connaissance pertinente trouvée.",
         }

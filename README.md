@@ -76,8 +76,11 @@ Ce projet, à partir de mesures machine (couple, vitesse, usure outil, températ
   `recommend_actions`, `check_drift`, …) → il **calcule** les réponses, il ne les invente pas.
 - **LLM hybride** : même code pour **Groq** (`openai/gpt-oss-120b`, démo) ou **Ollama** (local, hors-ligne),
   via un client OpenAI-compatible routé par variable d'environnement.
-- **Knowledge Graph + GraphRAG** : ontologie FMEA (modes de panne → causes → signatures → actions)
-  en NetworkX ; l'agent **diagnostique par seuils** puis lit les actions dans le graphe (anti-hallucination).
+- **Knowledge Graph + GraphRAG** : ontologie FMEA en NetworkX (modes → causes → symptômes →
+  composants → actions → capteurs). Retrieval sémantique (**embedder multilingue**, FR) → sous-graphe
+  étendu par voisinage → sérialisé **avec ses relations** (triplets `source --rel--> cible`), pas
+  seulement du texte : la structure du graphe est réellement transmise au LLM. Le diagnostic par
+  seuils reste **déterministe** (anti-hallucination).
 - **Mémoire épisodique** : les diagnostics sont stockés **horodatés** (chromadb + embeddings),
   rappelés par **similarité** et **filtrables par machine** ; traités comme des notes utilisateur non vérifiées.
 - **Guardrails & modèle de menace** : un pré-filtre déterministe écarte les injections évidentes

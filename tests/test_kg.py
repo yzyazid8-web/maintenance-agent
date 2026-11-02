@@ -65,6 +65,15 @@ def test_graphrag_returns_grounded_context():
     assert isinstance(out["context"], str) and out["context"].strip()
 
 
+def test_graphrag_serializes_graph_structure():
+    # La structure (relations/triplets) doit être transmise, pas seulement du texte plat :
+    kg = KnowledgeGraph(embed_fn=_fake_embed)
+    out = kg.graphrag("usure de l'outil de coupe", k=3, hops=1)
+    assert out["relations"], "le sous-graphe devrait exposer des triplets source--rel-->cible"
+    assert any("-->" in t for t in out["relations"])
+    assert "Relations (graphe)" in out["context"]
+
+
 def test_expand_subgraph_connects_mode_to_its_nodes():
     kg = KnowledgeGraph(embed_fn=_fake_embed)
     sub = kg.expand_subgraph(["OSF"], hops=1)
