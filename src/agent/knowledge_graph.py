@@ -147,7 +147,7 @@ class KnowledgeGraph:
         return self.graph.subgraph(nodes)
 
     def graphrag(self, query: str, k: int = 3, hops: int = 1) -> dict:
-        """Récupère un sous-graphe pertinent et le sérialise pour le LLM, avec sa structure """
+        """Récupère un sous-graphe pertinent et le sérialise pour le LLM, avec sa structure"""
         seeds = self.semantic_search(query, k)
         sub = self.expand_subgraph(seeds, hops)
         modes = [n for n in sub.nodes if self.graph.nodes[n]["kind"] == "mode"]
@@ -160,7 +160,7 @@ class KnowledgeGraph:
                 if d.get(field):
                     lines.append(f"- {field} : {', '.join(d[field])}")
 
-        # Structure du sous-graphe : triplets 
+        # Structure du sous-graphe : triplets
         triplets = [f"{s} --{self.graph.edges[s, t]['rel']}--> {t}" for s, t in sub.edges]
         if triplets:
             lines.append("#### Relations (graphe)")

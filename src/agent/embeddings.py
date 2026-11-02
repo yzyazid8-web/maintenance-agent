@@ -3,7 +3,7 @@
 from collections.abc import Callable
 from functools import lru_cache
 
-EMBED_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"  
+EMBED_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
 
 Embedder = Callable[[list[str]], list[list[float]]]
 

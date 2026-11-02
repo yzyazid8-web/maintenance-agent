@@ -136,7 +136,7 @@ def run(n_trials: int = 30) -> dict:
     y_all = df[config.TARGET].to_numpy()
     raw_oof = _oof_scores(df, best_params)["risk"].to_numpy()
 
-    # Affichage / seuil / courbe de fiabilité : calibration CROSS-FIT 
+    # Affichage / seuil / courbe de fiabilité : calibration CROSS-FIT
     cal_oof = np.zeros_like(raw_oof, dtype=float)
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=config.SEED)
     for tr, te in skf.split(raw_oof.reshape(-1, 1), y_all):

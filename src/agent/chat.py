@@ -1,13 +1,9 @@
-"""Pont entre mo.ui.chat et l'agent : conserve l'historique d'un tour à l'autre.
-
-Observabilité : à chaque tour, les outils réellement appelés par l'agent sont loggés dans le
-terminal (preuve que le GraphRAG / les outils tournent, et pas seulement la connaissance du LLM).
-"""
+"""Pont entre mo.ui.chat et l'agent : conserve l'historique d'un tour à l'autre."""
 
 import asyncio
 import sys
 
-from src.agent.agent import build_agent
+from src.agent.agent import build_agent, trim_history
 from src.agent.eval import extract_tool_trace
 from src.agent.guardrails import REFUSAL_MESSAGE, check_input
 from src.agent.tools import build_deps
@@ -38,9 +34,11 @@ def build_chat_model():
         prompt = messages[-1].content
         if not check_input(prompt).allowed:  # refus déterministe, sans appeler le LLM
             return REFUSAL_MESSAGE
+        # On ne renvoie au LLM que les derniers tours -> borne la consommation de tokens 
+        history = trim_history(state["history"]) if state["history"] else None
         try:
             result = await asyncio.wait_for(
-                agent.run(prompt, deps=deps, message_history=state["history"]),
+                agent.run(prompt, deps=deps, message_history=history),
                 timeout=TIMEOUT_S,
             )
         except TimeoutError:

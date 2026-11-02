@@ -53,6 +53,24 @@ def _require_machine(deps: Deps, machine_id: int) -> None:
         )
 
 
+MAX_HISTORY_TURNS = 6  # bornage : on ne renvoie au LLM que les N derniers tours 
+
+
+def _is_user_turn(message) -> bool:
+    return any(
+        getattr(p, "part_kind", "") == "user-prompt" or type(p).__name__ == "UserPromptPart"
+        for p in getattr(message, "parts", [])
+    )
+
+
+def trim_history(messages: list):
+    """Garde les N derniers tours (démarre sur un message utilisateur -> pas de paire"""
+    starts = [i for i, m in enumerate(messages) if _is_user_turn(m)]
+    if len(starts) <= MAX_HISTORY_TURNS:
+        return messages
+    return messages[starts[-MAX_HISTORY_TURNS] :]
+
+
 def build_agent() -> Agent:
     agent = Agent(build_model(), deps_type=Deps, system_prompt=SYSTEM_PROMPT, retries=2)
 
