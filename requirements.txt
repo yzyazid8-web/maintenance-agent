@@ -1,32 +1,32 @@
-# Dépendances RUNTIME (app servie dans le conteneur). Garder léger : pas d'Optuna/MLflow/RAGAS ici.
-# Astuce repro : après le 1er install, fige les versions avec `pip freeze > requirements.txt`.
+# Dépendances RUNTIME (app servie dans le conteneur). Garder léger : pas d'Optuna/MLflow ici.
+# Versions FIGÉES (reproductibilité). Pour mettre à jour : bump la version voulue puis teste.
 
 # --- Interface ---
-marimo>=0.9
+marimo==0.25.2
 
 # --- Modèle servi + explicabilité (outils de l'agent) ---
-xgboost>=2.0
-scikit-learn>=1.4
-pandas>=2.0
-numpy>=1.26
-shap>=0.44
-joblib>=1.3
+xgboost==3.4.1
+scikit-learn==1.9.1
+pandas==3.1.0
+numpy==2.5.4
+shap==0.54.1
+joblib==1.6.0
 
 # --- Agent LLM (tool calling typé) + client OpenAI-compatible (Groq / Ollama) ---
 # pydantic-ai >= 2.0 : requis pour l'intégration mo.ui.chat de marimo (module pydantic_ai.ui).
-pydantic>=2.6
-pydantic-ai-slim[openai]>=2.0
+pydantic==2.14.2
+pydantic-ai-slim[openai]==2.63.0
 
 # --- Mémoire persistante (embeddings légers + vector store) ---
-sentence-transformers>=3.0
-chromadb>=0.5
+sentence-transformers==6.2.0
+chromadb==1.5.9
 
 # --- Knowledge Graph / GraphRAG ---
-networkx>=3.2
-pyyaml>=6.0
+networkx==3.7
+pyyaml==6.0.3
 
 # --- Visualisation (importée directement par app.py) ---
-matplotlib>=3.8
+matplotlib==3.11.2
 
 # --- Détection de dérive (Wasserstein) ---
-scipy>=1.11
+scipy==1.18.1
