@@ -32,14 +32,15 @@ monitoring), sans rien inventer.
 
 Ce projet, de bout en bout :
 
-- **IA agentique / LLM** : agent **ReAct** à outils (Pydantic AI), **GraphRAG** sur un knowledge
+- **IA agentique / LLM** : **agent à outils** (Pydantic AI), **GraphRAG** sur un knowledge
   graph de modes de panne, **mémoire** épisodique, **guardrails**, et **évaluation** (LLM-as-judge).
 - **MLOps** : détection de **dérive** (PSI, Wasserstein, domain classifier), réentraînement,
   suivi **MLflow**, conteneurisation **Docker**, **CI** GitHub Actions (lint + tests + build).
 - **ML & explicabilité** : XGBoost sur données déséquilibrées, **SHAP** (global + local).
-- **Rigueur** : séparation train/serving, tests (**23** unitaires), code typé et linté.
+- **Rigueur** : séparation train/serving, tests (**27** unitaires), code typé et linté.
 
-**Résultats clés :** PR-AUC **0,90** (vs 0,43 pour une baseline linéaire) · ROC-AUC **0,98** ·
+**Résultats clés :** PR-AUC **0,87 ± 0,01** en validation croisée (0,90 sur le jeu de test,
+**0,78** en découpage par ordre d'arrivée — plus réaliste) · ROC-AUC **0,98** ·
 l'agent appelle le bon outil dans **100 %** des cas évalués.
 
 ---
@@ -69,7 +70,7 @@ Ce projet, à partir de mesures machine (couple, vitesse, usure outil, températ
 
 ## 🧠 L'agent IA — techniques mises en œuvre
 
-- **Agentique (ReAct + tool-calling)** : l'agent raisonne en plusieurs étapes et appelle des
+- **Agentique (agent à outils / tool-calling)** : l'agent raisonne en plusieurs étapes et appelle des
   outils Python (`predict_risk`, `explain_prediction`, `whatif`, `diagnose_mode`,
   `recommend_actions`, `check_drift`, …) → il **calcule** les réponses, il ne les invente pas.
 - **LLM hybride** : même code pour **Groq** (`openai/gpt-oss-120b`, démo) ou **Ollama** (local, hors-ligne),
@@ -89,7 +90,7 @@ flowchart LR
     U([Utilisateur]) --> DASH
     subgraph APP["Tableau de bord marimo"]
       DASH[KPIs - table risques - SHAP - supervision]
-      AG[Agent IA ReAct]
+      AG[Agent IA a outils]
     end
     AG -->|outils| MODEL[XGBoost + SHAP]
     AG -->|GraphRAG| KG[(Knowledge Graph FMEA)]
@@ -102,7 +103,8 @@ flowchart LR
 
 ## 📊 Résultats
 
-Modèle entraîné sur **AI4I 2020** (10 000 machines, **3,4 %** de pannes — fortement déséquilibré).
+Modèle entraîné sur **AI4I 2020** : 10 000 **points de fonctionnement** (relevés de machines-outils,
+pas 10 000 machines distinctes), **3,4 %** de pannes — fortement déséquilibré.
 
 | Modèle | PR-AUC | ROC-AUC |
 |---|---|---|
@@ -112,6 +114,29 @@ Modèle entraîné sur **AI4I 2020** (10 000 machines, **3,4 %** de pannes — f
 > La **PR-AUC** (métrique adaptée au déséquilibre) révèle l'écart réel entre les deux modèles,
 > là où la ROC-AUC seule le masquerait. Facteurs les plus influents (SHAP) :
 > `rotational_speed`, `tool_wear`, et la feature physique dérivée `power` — cohérents avec la physique des pannes.
+
+**Robustesse du chiffre (en toute transparence).** Le **0,90** est la PR-AUC sur *un* découpage
+(jeu de test). En validation croisée 5-fold elle vaut **0,87 ± 0,01** (plage 0,86–0,90) ; et en
+découpage par **ordre d'arrivée** des relevés — proxy d'un déploiement temporel — elle tombe à
+**0,78**. C'est ce dernier chiffre, le plus pessimiste, qui préfigure le mieux la production : un
+0,90 isolé serait trompeur.
+
+### Et une simple baseline par règles « métier » ? (quand le ML sert vraiment)
+
+Les modes de panne d'AI4I 2020 sont **générés par des seuils documentés**. Une baseline FMEA codée
+à la main avec ces mêmes seuils (`src/agent/knowledge_graph.py`) les retrouve donc presque
+parfaitement en **rappel** — HDF/PWF/OSF à ~1,00, et même TWF à 0,96 là où XGBoost le sous-détecte (0,33).
+
+| Détection de panne | Précision | Rappel |
+|---|---|---|
+| Règles FMEA (seuils) | 0,33 | 0,97 |
+| **XGBoost** (seuil par coût) | **0,61** | 0,88 |
+
+**Ce que le ML apporte réellement ici** n'est donc pas un meilleur rappel, mais : une **précision
+doublée** (deux fois moins de fausses alertes, à rappel comparable), une **probabilité calibrée et
+classable** — indispensable au tableau de bord et à l'agent — et aucun seuil à maintenir par type de
+machine. Les pannes **aléatoires** (RNF) restent imprévisibles pour les deux approches (rappel
+~0,05–0,11) : c'est un plafond intrinsèque du jeu de données, pas un défaut du modèle.
 
 *(Rapport d'évaluation de l'agent : `eval/report.md`, généré par `python -m src.agent.eval`.)*
 
@@ -131,7 +156,7 @@ src/
   agent/
     llm.py                 LLM hybride (Groq / Ollama)
     tools.py               outils de l'agent (fonctions pures)
-    agent.py               agent ReAct (Pydantic AI)
+    agent.py               agent à outils (Pydantic AI)
     knowledge_graph.py     graphe FMEA + GraphRAG
     memory.py              mémoire épisodique (chromadb)
     guardrails.py          garde-fous d'entrée
