@@ -40,8 +40,9 @@ Ce projet, de bout en bout :
 - **Rigueur** : séparation train/serving, tests (**27** unitaires), code typé et linté.
 
 **Résultats clés :** PR-AUC **0,87 ± 0,01** en validation croisée (0,90 sur le jeu de test,
-**0,78** en découpage par ordre d'arrivée — plus réaliste) · ROC-AUC **0,98** ·
-l'agent appelle le bon outil dans **100 %** des cas évalués.
+**0,78** en découpage par ordre d'arrivée — plus réaliste) · ROC-AUC **0,98** · agent évalué sur
+**31 questions catégorisées** (appels d'outils, exactitude des arguments, refus hors-sujet,
+injections, groundedness) → `eval/report.md`.
 
 ---
 
@@ -79,8 +80,11 @@ Ce projet, à partir de mesures machine (couple, vitesse, usure outil, températ
   en NetworkX ; l'agent **diagnostique par seuils** puis lit les actions dans le graphe (anti-hallucination).
 - **Mémoire épisodique** : les diagnostics sont stockés (chromadb + embeddings) et rappelés par similarité.
 - **Guardrails** : refus déterministe des injections de prompt et des entrées invalides, avant tout appel LLM.
-- **Évaluation** : *tool-call accuracy* (déterministe) + *groundedness* notée par un **LLM-as-judge**
-  — avec un **modèle juge distinct de l'agent** (famille différente) pour éviter le biais d'auto-complaisance.
+- **Évaluation** (`eval/golden_set.yaml`, 31 questions par catégorie) : appels d'outils **et
+  exactitude des arguments** (déterministe), **refus** des questions hors-sujet et des injections,
+  gestion des **ID invalides**, et *groundedness* notée par un **LLM-as-judge distinct de l'agent**
+  (qui reçoit les instructions de l'agent pour ne pas pénaliser les réponses légitimes). Moyenne sur
+  plusieurs runs ; toutes les métriques — y compris les moins bonnes — sont publiées.
 
 ---
 

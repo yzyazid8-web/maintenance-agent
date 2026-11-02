@@ -51,7 +51,7 @@ def model_metrics(df, best_params) -> dict:
         p.fit(X.iloc[tr], y[tr])
         folds.append(float(average_precision_score(y[te], p.predict_proba(X.iloc[te])[:, 1])))
 
-    cut = int(0.8 * len(X))  # split temporel 
+    cut = int(0.8 * len(X))  # split temporel
     pt = build_pipeline(
         _xgb({**best_params, "n_jobs": -1}, _scale_pos_weight(y[:cut])), scale=False
     )
