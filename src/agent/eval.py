@@ -184,8 +184,12 @@ _RETRYABLE = {
 }
 
 
-def _retry(call, retries: int = 6, base: float = 3.0):
-    """Réessaie sur une erreur fournisseur transitoire (429, rejet ponctuel) avec backoff."""
+def _retry(call, retries: int = 8, base: float = 5.0):
+    """Réessaie sur une erreur fournisseur transitoire (429, rejet, coupure) avec backoff.
+
+    Cap à 60 s : sur un rate-limit en tokens/MINUTE (free tier Groq), une attente ~1 min laisse
+    le budget se réinitialiser -> les derniers items du run ne sont plus starvés.
+    """
     import time
 
     for attempt in range(retries):
@@ -194,7 +198,7 @@ def _retry(call, retries: int = 6, base: float = 3.0):
         except Exception as exc:
             if type(exc).__name__ not in _RETRYABLE or attempt == retries - 1:
                 raise
-            time.sleep(min(base * 2**attempt, 30))
+            time.sleep(min(base * 2**attempt, 60))
 
 
 def _errored_result(item: dict, exc: Exception) -> dict:
@@ -325,23 +329,32 @@ def to_markdown(
         f"- Couverture : **{total - errored}/{total}** items évalués "
         f"({errored} exclus pour erreur fournisseur, non comptés contre l'agent)."
     )
-    lines += ["", "## Résultats globaux", "", "| Métrique | Moyenne ± écart |", "|---|---|"]
+    lines += [
+        "",
+        "## Résultats globaux",
+        "",
+        "> Le **n évalués** est affiché : un taux calculé sur peu d'items (rate-limit, exclusions) "
+        "ne doit pas être lu comme un verdict ferme.",
+        "",
+        "| Métrique | Moyenne ± écart | n évalués |",
+        "|---|---|--:|",
+    ]
 
     for key, label in _BOOL_METRICS.items():
-        per_run = [_run_rate(rows, key) for rows in all_runs]
-        per_run = [x for x in per_run if x is not None]
+        per_run = [x for x in (_run_rate(rows, key) for rows in all_runs) if x is not None]
+        n_eval = sum(1 for rows in all_runs for r in rows if key in r)
         if per_run:
-            lines.append(f"| {label} | **{_mean(per_run):.0%}** ± {_std(per_run):.0%} |")
+            lines.append(f"| {label} | **{_mean(per_run):.0%}** ± {_std(per_run):.0%} | {n_eval} |")
 
-    g_per_run = [_run_rate(rows, "groundedness") for rows in all_runs]
-    g_per_run = [x for x in g_per_run if x is not None]
+    g_per_run = [x for x in (_run_rate(rows, "groundedness") for rows in all_runs) if x is not None]
+    g_n = sum(1 for rows in all_runs for r in rows if "groundedness" in r)
     if g_per_run:
         lines.append(
-            f"| Groundedness (1-5, juge) | **{_mean(g_per_run):.2f}** ± {_std(g_per_run):.2f} |"
+            f"| Groundedness (1-5, juge) | **{_mean(g_per_run):.2f}** ± {_std(g_per_run):.2f} | {g_n} |"
         )
     calls_per_run = [x for x in (_run_rate(rows, "n_calls") for rows in all_runs) if x is not None]
     if calls_per_run:
-        lines.append(f"| Appels d'outils / question (moyenne) | {_mean(calls_per_run):.1f} |")
+        lines.append(f"| Appels d'outils / question (moyenne) | {_mean(calls_per_run):.1f} | — |")
 
     # Par catégorie (agrégé sur tous les runs)
     lines += [
