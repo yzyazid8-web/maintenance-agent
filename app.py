@@ -43,9 +43,24 @@ def _():
     )
 
     pipe = joblib.load(MODELS_DIR / "pipeline.joblib")
+    fold_models = joblib.load(
+        MODELS_DIR / "fold_models.joblib"
+    )  # 1 modèle par fold (SHAP cohérent)
     metrics = json.loads((MODELS_DIR / "metrics.json").read_text())
     df = load_data()
-    return C_PANNE, C_SAIN, MUTED, df, explain_row, global_importance, metrics, mo, pipe, plt
+    return (
+        C_PANNE,
+        C_SAIN,
+        MUTED,
+        df,
+        explain_row,
+        fold_models,
+        global_importance,
+        metrics,
+        mo,
+        pipe,
+        plt,
+    )
 
 
 @app.cell
@@ -57,7 +72,11 @@ def _(df):
     X = df.drop(columns=["machine_failure"])
     # Risque affiché = prédictions out-of-fold (hors-échantillon), pas un score sur les données vues.
     _oof = _pd.read_csv(_MODELS_DIR / "oof_scores.csv", index_col="machine_id")
-    scored = df.assign(risk=_oof["risk"].to_numpy(), risk_raw=_oof["raw"].to_numpy())
+    scored = df.assign(
+        risk=_oof["risk"].to_numpy(),
+        risk_raw=_oof["raw"].to_numpy(),
+        fold=_oof["fold"].astype(int).to_numpy(),
+    )
     return X, scored
 
 
@@ -160,7 +179,7 @@ def _(mo, scored, threshold):
     at_risk = (
         scored[scored["risk"] >= threshold.value]
         .sort_values(["risk", "risk_raw"], ascending=False)  # départage les ex-æquo
-        .drop(columns=["risk_raw"])
+        .drop(columns=["risk_raw", "fold"])
         .round({"risk": 3})
     )
     display = mo.vstack(
@@ -236,12 +255,13 @@ def _(mo, scored):
 
 
 @app.cell
-def _(C_PANNE, C_SAIN, MUTED, X, explain_row, machine, mo, pipe, plt, scored):
+def _(C_PANNE, C_SAIN, MUTED, X, explain_row, fold_models, machine, mo, plt, scored):
     if machine.value is None or int(machine.value) not in scored.index:
         out = mo.md("_Saisis un index de machine valide pour l'inspecter._")
     else:
         _idx = int(machine.value)
-        _contrib = explain_row(pipe, X.loc[[_idx]])
+        _model = fold_models[int(scored.loc[_idx, "fold"])]  # modèle qui n'a pas vu cette ligne
+        _contrib = explain_row(_model, X.loc[[_idx]])
         _items = sorted(_contrib.items(), key=lambda kv: abs(kv[1]))
         _names = [k for k, _ in _items]
         _vals = [v for _, v in _items]
@@ -250,8 +270,8 @@ def _(C_PANNE, C_SAIN, MUTED, X, explain_row, machine, mo, pipe, plt, scored):
         _ax.barh(_names, _vals, color=_colors)
         _ax.axvline(0, color=MUTED, linewidth=0.8)
         _ax.set_title(
-            f"Machine {_idx} — risque affiché {scored.loc[_idx, 'risk']:.1%} "
-            f"· lecture SHAP du modèle servi"
+            f"Machine {_idx} — risque {scored.loc[_idx, 'risk']:.1%} "
+            f"· SHAP du modèle hors-échantillon"
         )
         _ax.grid(axis="y", visible=False)
         _fig.tight_layout()

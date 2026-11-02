@@ -32,8 +32,14 @@ def test_tools():
     assert wi["applied"] == {"torque_nm": 20.0}
 
 
-def test_whatif_before_equals_displayed_risk():
+def test_whatif_consistent_with_displayed_risk():
+    # P0-2 : risk_before ET risk_after (sans modif) sont RECALCULÉS via le modèle de fold de la
+    # machine, et doivent retomber EXACTEMENT sur le risque affiché (lu, lui, dans oof_scores.csv).
+    # Non tautologique : deux chemins indépendants (modèle+calibrateur vs colonne) doivent coïncider.
     deps = build_deps()
     for mid in deps.scored.sort_values("risk", ascending=False).index[:5]:
         mid = int(mid)
-        assert whatif(deps, mid, {})["risk_before"] == predict_risk(deps, mid)
+        wi = whatif(deps, mid, {})
+        assert wi["risk_before"] == predict_risk(deps, mid)
+        assert wi["risk_after"] == predict_risk(deps, mid)  # aucune modif -> même sortie
+        assert "delta" not in wi  # plus de mélange de modèles

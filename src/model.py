@@ -14,7 +14,7 @@ import optuna
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score, roc_auc_score
-from sklearn.model_selection import StratifiedKFold, cross_val_predict, cross_val_score
+from sklearn.model_selection import StratifiedKFold, cross_val_score
 from xgboost import XGBClassifier
 
 from src import config
@@ -111,14 +111,23 @@ def train_xgboost(X_train, y_train, X_test, y_test, n_trials: int = 30):
     return pipe, _evaluate(pipe, X_test, y_test), study.best_params, float(study.best_value)
 
 
-def _oof_scores(df, best_params) -> pd.DataFrame:
-    """Risque out-of-fold sur tout le dataset"""
+def _oof_fold_models(df, best_params):
+    """Entraîne 5 modèles de fold ; chacun prédit son held-out (score OOF brut)."""
     X = df.drop(columns=[config.TARGET])
-    y = df[config.TARGET]
-    pipe = build_pipeline(_xgb({**best_params, "n_jobs": 1}, _scale_pos_weight(y)), scale=False)
+    y = df[config.TARGET].to_numpy()
+    raw_oof = np.zeros(len(df), dtype=float)
+    fold_of = np.zeros(len(df), dtype=int)
+    fold_models = []
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=config.SEED)
-    oof = cross_val_predict(pipe, X, y, cv=cv, method="predict_proba", n_jobs=-1)[:, 1]
-    return pd.DataFrame({"risk": oof}, index=df.index)
+    for f, (tr, te) in enumerate(cv.split(X, y)):
+        model = build_pipeline(
+            _xgb({**best_params, "n_jobs": -1}, _scale_pos_weight(y[tr])), scale=False
+        )
+        model.fit(X.iloc[tr], y[tr])
+        raw_oof[te] = model.predict_proba(X.iloc[te])[:, 1]
+        fold_of[te] = f
+        fold_models.append(model)
+    return raw_oof, fold_of, fold_models
 
 
 def _optimal_threshold(y, proba, cost_fn: float = COST_FN, cost_fp: float = COST_FP) -> float:
@@ -154,7 +163,14 @@ def run(n_trials: int = 30) -> dict:
         mlflow.log_params(best_params)
         mlflow.log_metric("cv_pr_auc", cv_pr_auc)
         mlflow.log_metrics(xgb_metrics)
-        mlflow.sklearn.log_model(pipe, artifact_path="model")  # artefact modèle versionné
+        try:  # cloudpickle : évite le refus skops des types custom (PhysicsFeatures, XGBoost)
+            mlflow.sklearn.log_model(
+                pipe, artifact_path="model", serialization_format="cloudpickle"
+            )
+        except (
+            Exception
+        ) as exc:  
+            print(f"[mlflow] log_model ignoré : {type(exc).__name__}: {exc}")
 
     config.MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -169,21 +185,21 @@ def run(n_trials: int = 30) -> dict:
     }
 
     if promoted:
-        joblib.dump(pipe, config.MODELS_DIR / "pipeline.joblib")
+        joblib.dump(
+            pipe, config.MODELS_DIR / "pipeline.joblib"
+        )  # modèle final
 
-        # Risque out-of-fold brut, puis calibration sigmoïde (Platt).
+        # 5 fold
         y_all = df[config.TARGET].to_numpy()
-        raw_oof = _oof_scores(df, best_params)["risk"].to_numpy()
+        raw_oof, fold_of, fold_models = _oof_fold_models(df, best_params)
 
-        # Affichage / seuil / courbe : calibration CROSS-FIT (non circulaire).
-        cal_oof = np.zeros_like(raw_oof, dtype=float)
-        skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=config.SEED)
-        for tr, te in skf.split(raw_oof.reshape(-1, 1), y_all):
-            cal_oof[te] = PlattCalibrator().fit(raw_oof[tr], y_all[tr]).predict(raw_oof[te])
+        # UN SEUL calibrateur Platt sur les scores OOF
+        calibrator = PlattCalibrator().fit(raw_oof, y_all)
+        cal_oof = calibrator.predict(raw_oof)
 
-        calibrator = PlattCalibrator().fit(raw_oof, y_all)  # calibrateur servi (what-if)
+        joblib.dump(fold_models, config.MODELS_DIR / "fold_models.joblib")
         joblib.dump(calibrator, config.MODELS_DIR / "calibrator.joblib")
-        pd.DataFrame({"risk": cal_oof, "raw": raw_oof}, index=df.index).to_csv(
+        pd.DataFrame({"risk": cal_oof, "raw": raw_oof, "fold": fold_of}, index=df.index).to_csv(
             config.MODELS_DIR / "oof_scores.csv", index_label="machine_id"
         )
         results = {
@@ -196,7 +212,7 @@ def run(n_trials: int = 30) -> dict:
         }
         (config.MODELS_DIR / "metrics.json").write_text(json.dumps(results, indent=2))
     else:
-        # Challenger moins bon : on CONSERVE le champion (pas d'écrasement) et on renvoie ses métriques.
+        # Challenger moins bon 
         results = json.loads((config.MODELS_DIR / "metrics.json").read_text())
 
     _log_history(n_trials, decision)

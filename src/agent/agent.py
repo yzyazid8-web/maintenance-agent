@@ -107,8 +107,8 @@ def build_agent() -> Agent[Deps, str]:
     def whatif(ctx: RunContext[Deps], machine_id: int, overrides: dict[str, float]) -> dict:
         """Re-score une machine en modifiant des variables brutes. Modifiables :
         air_temp_k, process_temp_k, rotational_speed_rpm, torque_nm, tool_wear_min.
-        Exemple d'overrides : {'torque_nm': 30}. risk_before = le risque affiche de la machine ;
-        risk_after = ce risque + l'effet (delta) du modèle sur les variables modifiées."""
+        Exemple d'overrides : {'torque_nm': 30}. risk_before (= le risque affiché de la machine)
+        et risk_after sont deux sorties du MÊME modèle, avant et après modification."""
         _require_machine(ctx.deps, machine_id)
         unknown = unknown_overrides(overrides)
         if unknown:
