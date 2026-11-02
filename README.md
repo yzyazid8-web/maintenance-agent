@@ -34,8 +34,9 @@ Ce projet, de bout en bout :
 
 - **IA agentique / LLM** : **agent à outils** (Pydantic AI), **GraphRAG** sur un knowledge
   graph de modes de panne, **mémoire** épisodique, **guardrails**, et **évaluation** (LLM-as-judge).
-- **MLOps** : détection de **dérive** (PSI, Wasserstein, domain classifier), réentraînement,
-  suivi **MLflow**, conteneurisation **Docker**, **CI** GitHub Actions (lint + tests + build).
+- **MLOps** : détection de **dérive** (PSI, Wasserstein, domain classifier), réentraînement avec
+  garde-fou **champion/challenger** (un nouveau modèle n'est promu que s'il égale ou dépasse l'actuel ;
+  chaque run est journalisé), suivi **MLflow**, **Docker**, **CI** GitHub Actions (lint + tests + build).
 - **ML & explicabilité** : XGBoost sur données déséquilibrées, **SHAP** (global + local).
 - **Rigueur** : séparation train/serving, tests (**27** unitaires), code typé et linté.
 

@@ -4,7 +4,13 @@ import numpy as np
 
 from src import config
 from src.data import load_data
-from src.drift import drift_report, psi, simulate_drift, wasserstein_norm
+from src.drift import drift_report, drift_verdict, psi, simulate_drift, wasserstein_norm
+
+
+def test_drift_verdict_thresholds():
+    assert drift_verdict(0.50) == "🟢 faible"
+    assert drift_verdict(0.70) == "🟡 modérée"
+    assert drift_verdict(0.90) == "🔴 forte"
 
 
 def test_psi_zero_on_identical():

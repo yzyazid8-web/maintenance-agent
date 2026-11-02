@@ -15,6 +15,19 @@ from src import config
 PSI_MODERATE = 0.1
 PSI_SIGNIFICANT = 0.25
 
+# Verdict global basé sur l'AUC du domain classifier (0,5 = aucune dérive). Seuils ICI, pas dans l'UI.
+DRIFT_AUC_MODERATE = 0.6
+DRIFT_AUC_STRONG = 0.75
+
+
+def drift_verdict(auc: float) -> str:
+    """Verdict lisible à partir de l'AUC multivariée de dérive."""
+    if auc > DRIFT_AUC_STRONG:
+        return "🔴 forte"
+    if auc > DRIFT_AUC_MODERATE:
+        return "🟡 modérée"
+    return "🟢 faible"
+
 
 def psi(reference, current, bins: int = 10) -> float:
     """Population Stability Index : 0 = stable, >0,1 modéré, >0,25 significatif"""
@@ -83,9 +96,9 @@ def drift_report(reference_df, current_df, features=None) -> dict:
                 "status": _status(p),
             }
         )
+    auc = round(domain_classifier_auc(reference_df, current_df, features), 3)
     return {
         "per_feature": per_feature,
-        "domain_classifier_auc": round(
-            domain_classifier_auc(reference_df, current_df, features), 3
-        ),
+        "domain_classifier_auc": auc,
+        "verdict": drift_verdict(auc),
     }

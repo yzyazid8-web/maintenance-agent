@@ -4,6 +4,7 @@ Lancer un entraînement complet :  python -m src.model
 """
 
 import json
+from datetime import UTC, datetime
 
 import joblib
 import mlflow
@@ -21,8 +22,32 @@ from src.data import load_data, split_data
 from src.features import build_pipeline
 
 COST_FN, COST_FP = 10.0, 1.0
+PROMOTE_EPS = 0.005  # on ne remplace pas le champion par un challenger nettement moins bon
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+
+def _champion_pr_auc() -> float | None:
+    """PR-AUC du modèle actuellement servi (None si aucun artefact)."""
+    path = config.MODELS_DIR / "metrics.json"
+    if not path.exists():
+        return None
+    try:
+        return float(json.loads(path.read_text())["xgboost"]["pr_auc"])
+    except (KeyError, ValueError):
+        return None
+
+
+def _should_promote(new_pr: float, champion_pr: float | None, eps: float = PROMOTE_EPS) -> bool:
+    """Promeut le challenger s'il n'est pas nettement moins bon que le champion (PR-AUC)."""
+    return champion_pr is None or new_pr >= champion_pr - eps
+
+
+def _log_history(n_trials: int, decision: dict) -> None:
+    """Trace chaque entraînement et sa décision de promotion (journal append-only)."""
+    rec = {"at": datetime.now(UTC).isoformat(timespec="seconds"), "n_trials": n_trials, **decision}
+    with open(config.MODELS_DIR / "history.jsonl", "a", encoding="utf-8") as f:
+        f.write(json.dumps(rec) + "\n")
 
 
 def _scale_pos_weight(y) -> float:
@@ -130,37 +155,50 @@ def run(n_trials: int = 30) -> dict:
         mlflow.log_metrics(xgb_metrics)
 
     config.MODELS_DIR.mkdir(parents=True, exist_ok=True)
-    joblib.dump(pipe, config.MODELS_DIR / "pipeline.joblib")
 
-    # Risque out-of-fold brut (hors-échantillon), puis calibration sigmoïde (Platt).
-    y_all = df[config.TARGET].to_numpy()
-    raw_oof = _oof_scores(df, best_params)["risk"].to_numpy()
-
-    # Affichage / seuil / courbe de fiabilité : calibration CROSS-FIT
-    cal_oof = np.zeros_like(raw_oof, dtype=float)
-    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=config.SEED)
-    for tr, te in skf.split(raw_oof.reshape(-1, 1), y_all):
-        cal_oof[te] = PlattCalibrator().fit(raw_oof[tr], y_all[tr]).predict(raw_oof[te])
-
-    # Calibrateur SERVI (what-if) : ajusté sur tout l'OOF
-    calibrator = PlattCalibrator().fit(raw_oof, y_all)
-    joblib.dump(calibrator, config.MODELS_DIR / "calibrator.joblib")
-    pd.DataFrame({"risk": cal_oof, "raw": raw_oof}, index=df.index).to_csv(
-        config.MODELS_DIR / "oof_scores.csv", index_label="machine_id"
-    )
-
-    threshold = _optimal_threshold(y_all, cal_oof)
-
-    results = {
-        "baseline": base_metrics,
-        "xgboost": xgb_metrics,
-        "best_params": best_params,
-        "threshold": round(threshold, 3),
-        "cost_fn": COST_FN,
-        "cost_fp": COST_FP,
+    # Champion / challenger : on ne remplace les artefacts QUE si le nouveau modèle tient la route.
+    champion_pr = _champion_pr_auc()
+    new_pr = xgb_metrics["pr_auc"]
+    promoted = _should_promote(new_pr, champion_pr)
+    decision = {
+        "promoted": promoted,
+        "challenger_pr_auc": round(new_pr, 4),
+        "champion_pr_auc": round(champion_pr, 4) if champion_pr is not None else None,
     }
-    (config.MODELS_DIR / "metrics.json").write_text(json.dumps(results, indent=2))
-    return results
+
+    if promoted:
+        joblib.dump(pipe, config.MODELS_DIR / "pipeline.joblib")
+
+        # Risque out-of-fold brut, puis calibration sigmoïde (Platt).
+        y_all = df[config.TARGET].to_numpy()
+        raw_oof = _oof_scores(df, best_params)["risk"].to_numpy()
+
+        # Affichage / seuil / courbe : calibration CROSS-FIT (non circulaire).
+        cal_oof = np.zeros_like(raw_oof, dtype=float)
+        skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=config.SEED)
+        for tr, te in skf.split(raw_oof.reshape(-1, 1), y_all):
+            cal_oof[te] = PlattCalibrator().fit(raw_oof[tr], y_all[tr]).predict(raw_oof[te])
+
+        calibrator = PlattCalibrator().fit(raw_oof, y_all)  # calibrateur servi (what-if)
+        joblib.dump(calibrator, config.MODELS_DIR / "calibrator.joblib")
+        pd.DataFrame({"risk": cal_oof, "raw": raw_oof}, index=df.index).to_csv(
+            config.MODELS_DIR / "oof_scores.csv", index_label="machine_id"
+        )
+        results = {
+            "baseline": base_metrics,
+            "xgboost": xgb_metrics,
+            "best_params": best_params,
+            "threshold": round(_optimal_threshold(y_all, cal_oof), 3),
+            "cost_fn": COST_FN,
+            "cost_fp": COST_FP,
+        }
+        (config.MODELS_DIR / "metrics.json").write_text(json.dumps(results, indent=2))
+    else:
+        # Challenger moins bon : on CONSERVE le champion (pas d'écrasement) et on renvoie ses métriques.
+        results = json.loads((config.MODELS_DIR / "metrics.json").read_text())
+
+    _log_history(n_trials, decision)
+    return {**results, "promotion": decision}
 
 
 if __name__ == "__main__":

@@ -295,7 +295,7 @@ def _(NUMERIC_FEATURES, X, drift_report, mo, pd, run_drift, severity, simulate_d
     else:
         _report = drift_report(X, simulate_drift(X, severity.value), NUMERIC_FEATURES)
         _auc = _report["domain_classifier_auc"]
-        _verdict = "🔴 forte" if _auc > 0.75 else "🟡 modérée" if _auc > 0.6 else "🟢 faible"
+        _verdict = _report["verdict"]  # seuils définis dans src/drift.py, pas dans l'UI
         _out = mo.vstack(
             [
                 mo.md(f"**Dérive globale (AUC domain classifier) : {_auc:.2f} → {_verdict}**"),
@@ -343,11 +343,20 @@ def _(mo, run_retrain):
         try:
             from src.model import run as run_training
 
-            _xgb = run_training(n_trials=10)["xgboost"]
-            _out = mo.md(
-                f"✅ Réentraînement terminé — nouvelle **PR-AUC = {_xgb['pr_auc']:.3f}** "
-                f"(ROC-AUC {_xgb['roc_auc']:.3f}).\n\n_Recharge l'app pour servir le nouveau modèle._"
-            )
+            _res = run_training(n_trials=10)
+            _p = _res["promotion"]
+            if _p["promoted"]:
+                _out = mo.md(
+                    f"✅ Challenger **promu** — PR-AUC {_p['challenger_pr_auc']:.3f} "
+                    f"(champion précédent : {_p['champion_pr_auc']}).\n\n"
+                    "_Recharge l'app pour servir le nouveau modèle._"
+                )
+            else:
+                _out = mo.md(
+                    f"🛟 Challenger **conservé au banc** (PR-AUC {_p['challenger_pr_auc']:.3f} "
+                    f"< champion {_p['champion_pr_auc']:.3f}) : le modèle en production est **inchangé**. "
+                    "C'est le garde-fou champion/challenger."
+                )
         except ModuleNotFoundError as _e:
             _out = mo.md(
                 "⚠️ Réentraînement indisponible ici : les dépendances d'entraînement "
