@@ -79,7 +79,11 @@ Ce projet, à partir de mesures machine (couple, vitesse, usure outil, températ
 - **Knowledge Graph + GraphRAG** : ontologie FMEA (modes de panne → causes → signatures → actions)
   en NetworkX ; l'agent **diagnostique par seuils** puis lit les actions dans le graphe (anti-hallucination).
 - **Mémoire épisodique** : les diagnostics sont stockés (chromadb + embeddings) et rappelés par similarité.
-- **Guardrails** : refus déterministe des injections de prompt et des entrées invalides, avant tout appel LLM.
+- **Guardrails & modèle de menace** : un pré-filtre déterministe écarte les injections évidentes
+  (réglé pour **0 faux positif** sur le vocabulaire métier). Mais le vrai rempart est **architectural** :
+  tous les outils sont en **lecture seule** (seul `save_note` écrit, et son contenu est traité comme
+  une note utilisateur non vérifiée) — une injection ne peut donc ni altérer le modèle/les données
+  ni exfiltrer de secret.
 - **Évaluation** (`eval/golden_set.yaml`, 31 questions par catégorie) : appels d'outils **et
   exactitude des arguments** (déterministe), **refus** des questions hors-sujet et des injections,
   gestion des **ID invalides**, et *groundedness* notée par un **LLM-as-judge distinct de l'agent**
