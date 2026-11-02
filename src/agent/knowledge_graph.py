@@ -1,6 +1,5 @@
 """Knowledge graph FMEA : diagnostic déterministe (seuils) + GraphRAG (sémantique + multi-sauts)."""
 
-import math
 from pathlib import Path
 
 import chromadb
@@ -9,6 +8,7 @@ import yaml
 
 from src import config
 from src.agent.embeddings import Embedder, default_embedder
+from src.features import delta_t_k, power_w, wear_x_torque  # formules physiques partagées
 
 ONTOLOGY_PATH = config.ROOT / "knowledge" / "failure_modes.yaml"
 
@@ -20,18 +20,6 @@ _RELATIONS = {
     "actions": ("corrige_par", "action"),
     "sensors": ("mesure_par", "capteur"),
 }
-
-
-def _power_w(row) -> float:
-    return row["torque_nm"] * row["rotational_speed_rpm"] * 2 * math.pi / 60
-
-
-def _delta_t(row) -> float:
-    return row["process_temp_k"] - row["air_temp_k"]
-
-
-def _wear_x_torque(row) -> float:
-    return row["tool_wear_min"] * row["torque_nm"]
 
 
 class KnowledgeGraph:
@@ -63,14 +51,14 @@ class KnowledgeGraph:
         if twf["tool_wear_low"] <= row["tool_wear_min"] <= twf["tool_wear_high"]:
             modes.append("TWF")
         hdf = th["HDF"]["thresholds"]
-        if _delta_t(row) < hdf["delta_t_max"] and row["rotational_speed_rpm"] < hdf["speed_max"]:
+        if delta_t_k(row) < hdf["delta_t_max"] and row["rotational_speed_rpm"] < hdf["speed_max"]:
             modes.append("HDF")
         pwf = th["PWF"]["thresholds"]
-        power = _power_w(row)
+        power = power_w(row)
         if power < pwf["power_min"] or power > pwf["power_max"]:
             modes.append("PWF")
         osf = th["OSF"]["thresholds"]["osf_by_type"].get(row["type"])
-        if osf is not None and _wear_x_torque(row) > osf:
+        if osf is not None and wear_x_torque(row) > osf:
             modes.append("OSF")
         return modes
 

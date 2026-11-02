@@ -1,6 +1,7 @@
 """Pont entre mo.ui.chat et l'agent : conserve l'historique d'un tour à l'autre."""
 
 import asyncio
+import logging
 import sys
 
 from src.agent.agent import build_agent, trim_history
@@ -9,6 +10,7 @@ from src.agent.guardrails import REFUSAL_MESSAGE, check_input
 from src.agent.tools import build_deps
 
 TIMEOUT_S = 90
+logger = logging.getLogger(__name__)
 
 
 def _log_tools(result) -> None:
@@ -34,7 +36,7 @@ def build_chat_model():
         prompt = messages[-1].content
         if not check_input(prompt).allowed:  # refus déterministe, sans appeler le LLM
             return REFUSAL_MESSAGE
-        # On ne renvoie au LLM que les derniers tours -> borne la consommation de tokens 
+        # On ne renvoie au LLM que les derniers tours -> borne la consommation de tokens
         history = trim_history(state["history"]) if state["history"] else None
         try:
             result = await asyncio.wait_for(
@@ -47,6 +49,7 @@ def build_chat_model():
                 "(8000 tokens/min). Patiente une minute puis réessaie."
             )
         except Exception as exc:
+            logger.exception("Erreur pendant l'exécution de l'agent")  # trace complète en logs
             return f"⚠️ Erreur de l'agent ({type(exc).__name__}). Réessaie dans un instant."
         _log_tools(result)
         state["history"] = result.all_messages()

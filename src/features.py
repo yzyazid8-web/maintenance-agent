@@ -14,6 +14,22 @@ NUMERIC = config.NUMERIC_FEATURES + ENGINEERED
 CATEGORICAL = config.CATEGORICAL_FEATURES  # ["type"]
 
 
+# Formules physiques 
+def power_w(row):
+    """Puissance mécanique (W) = couple x vitesse angulaire."""
+    return row["torque_nm"] * row["rotational_speed_rpm"] * 2 * np.pi / 60
+
+
+def delta_t_k(row):
+    """Écart de température procédé - air (K)."""
+    return row["process_temp_k"] - row["air_temp_k"]
+
+
+def wear_x_torque(row):
+    """Interaction usure x couple."""
+    return row["tool_wear_min"] * row["torque_nm"]
+
+
 class PhysicsFeatures(BaseEstimator, TransformerMixin):
     """Ajoute puissance, écart de température et usure x couple"""
 
@@ -22,9 +38,9 @@ class PhysicsFeatures(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         X = X.copy()
-        X["power_w"] = X["torque_nm"] * X["rotational_speed_rpm"] * 2 * np.pi / 60
-        X["delta_t_k"] = X["process_temp_k"] - X["air_temp_k"]
-        X["wear_x_torque"] = X["tool_wear_min"] * X["torque_nm"]
+        X["power_w"] = power_w(X)
+        X["delta_t_k"] = delta_t_k(X)
+        X["wear_x_torque"] = wear_x_torque(X)
         return X
 
 

@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 
 import joblib
 import mlflow
+import mlflow.sklearn
 import numpy as np
 import optuna
 import pandas as pd
@@ -153,10 +154,11 @@ def run(n_trials: int = 30) -> dict:
         mlflow.log_params(best_params)
         mlflow.log_metric("cv_pr_auc", cv_pr_auc)
         mlflow.log_metrics(xgb_metrics)
+        mlflow.sklearn.log_model(pipe, artifact_path="model")  # artefact modèle versionné
 
     config.MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Champion / challenger : on ne remplace les artefacts QUE si le nouveau modèle tient la route.
+    # Champion / challenger : on ne remplace les artefacts que si le nouveau modèle tient la route.
     champion_pr = _champion_pr_auc()
     new_pr = xgb_metrics["pr_auc"]
     promoted = _should_promote(new_pr, champion_pr)

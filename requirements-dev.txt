@@ -21,3 +21,4 @@ ipykernel==7.4.0
 # --- Qualité & tests ---
 ruff==0.17.3
 pytest==9.2.0
+pytest-cov==7.1.0

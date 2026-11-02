@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.9.0"
+__generated_with = "0.25.2"
 app = marimo.App(width="medium", app_title="Maintenance prédictive")
 
 

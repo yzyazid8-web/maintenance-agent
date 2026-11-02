@@ -45,13 +45,18 @@ def _build(model: str, backend: str) -> OpenAIChatModel:
     return OpenAIChatModel(model, provider=provider)
 
 
-def build_model() -> OpenAIChatModel:
-    """Modèle de l'AGENT, routé par LLM_BACKEND (groq par défaut)"""
+def resolve_agent() -> tuple[str, str]:
+    """(modèle, backend) de l'agent, routé par LLM_BACKEND (groq par défaut)."""
     _load_env_file()
     backend = os.environ.get("LLM_BACKEND", "groq").lower()
     default = "qwen2.5:3b" if backend == "ollama" else "openai/gpt-oss-120b"
     env_var = "OLLAMA_MODEL" if backend == "ollama" else "GROQ_MODEL"
-    return _build(os.environ.get(env_var, default), backend)
+    return os.environ.get(env_var, default), backend
+
+
+def build_model() -> OpenAIChatModel:
+    """Modèle de l'AGENT, routé par LLM_BACKEND (groq par défaut)"""
+    return _build(*resolve_agent())
 
 
 def resolve_judge() -> tuple[str, str]:
@@ -63,6 +68,5 @@ def resolve_judge() -> tuple[str, str]:
 
 
 def build_judge_model() -> OpenAIChatModel:
-    """Modèle JUGE de l'éval : famille différente de l'agent par défaut, pour éviter le
-    biais d'auto-complaisance (un LLM qui se note lui-même se sur-note)."""
+    """Modèle JUGE de l'éval : famille différente de l'agent par défaut"""
     return _build(*resolve_judge())

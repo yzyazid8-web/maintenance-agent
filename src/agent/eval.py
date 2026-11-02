@@ -286,15 +286,37 @@ def _run_rate(rows, key):
     return _mean([float(v) for v in vals]) if vals else None
 
 
-def to_markdown(all_runs: list[list[dict]], judge_model: str | None = None) -> str:
+def _git_commit() -> str:
+    """Commit court courant (best-effort, 'n/a' si git indisponible)."""
+    import subprocess
+
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, timeout=5
+        )
+        return out.stdout.strip() or "n/a"
+    except Exception:
+        return "n/a"
+
+
+def to_markdown(
+    all_runs: list[list[dict]],
+    judge_model: str | None = None,
+    agent_model: str | None = None,
+) -> str:
+    from datetime import UTC, datetime
+
     runs = len(all_runs)
     n_items = len(all_runs[0]) if all_runs else 0
     lines = [
         "# Évaluation de l'agent",
         "",
+        f"- Généré le **{datetime.now(UTC).date().isoformat()}** · commit **{_git_commit()}**",
         f"- Jeu de référence : **{n_items} questions** par catégorie · **{runs} run(s)** "
         "(moyenne ± écart-type).",
     ]
+    if agent_model:
+        lines.append(f"- Agent évalué : **{agent_model}**.")
     if judge_model:
         lines.append(f"- Juge (LLM-as-judge) : **{judge_model}** — modèle distinct de l'agent.")
     total = runs * n_items
@@ -384,10 +406,14 @@ def to_markdown(all_runs: list[list[dict]], judge_model: str | None = None) -> s
 if __name__ == "__main__":
     import os
 
-    from src.agent.llm import resolve_judge
+    from src.agent.llm import resolve_agent, resolve_judge
 
-    runs = int(os.environ.get("EVAL_RUNS", "3"))  # EVAL_RUNS=1 pour un run rapide
-    report = to_markdown(evaluate(runs=runs), judge_model=resolve_judge()[0])
+    runs = int(os.environ.get("EVAL_RUNS", "3")) 
+    report = to_markdown(
+        evaluate(runs=runs),
+        judge_model=resolve_judge()[0],
+        agent_model=resolve_agent()[0],
+    )
     print(report)
     (config.ROOT / "eval" / "report.md").write_text(report, encoding="utf-8")
     print("\nRapport écrit : eval/report.md")

@@ -53,7 +53,13 @@ def _require_machine(deps: Deps, machine_id: int) -> None:
         )
 
 
-MAX_HISTORY_TURNS = 6  # bornage : on ne renvoie au LLM que les N derniers tours 
+def unknown_overrides(overrides) -> list[str]:
+    """Variables non modifiables en what-if (seules les numériques le sont ; 'type' est exclu)."""
+    valid = set(config.NUMERIC_FEATURES)
+    return [k for k in overrides if k.split("__", 1)[-1] not in valid]
+
+
+MAX_HISTORY_TURNS = 6  # bornage : on ne renvoie au LLM que les N derniers tours
 
 
 def _is_user_turn(message) -> bool:
@@ -98,16 +104,16 @@ def build_agent() -> Agent:
 
     @agent.tool
     def whatif(ctx: RunContext[Deps], machine_id: int, overrides: dict[str, float]) -> dict:
-        """Re-score une machine en modifiant des variables BRUTES. Modifiables :
+        """Re-score une machine en modifiant des variables brutes. Modifiables :
         air_temp_k, process_temp_k, rotational_speed_rpm, torque_nm, tool_wear_min.
-        Exemple d'overrides : {'torque_nm': 30}. risk_before = le risque AFFICHÉ de la machine ;
+        Exemple d'overrides : {'torque_nm': 30}. risk_before = le risque affiche de la machine ;
         risk_after = ce risque + l'effet (delta) du modèle sur les variables modifiées."""
         _require_machine(ctx.deps, machine_id)
-        valid = set(config.NUMERIC_FEATURES)  # 'type' (catégorielle) non modifiable
-        unknown = [k for k in overrides if k.split("__", 1)[-1] not in valid]
+        unknown = unknown_overrides(overrides)
         if unknown:
             raise ModelRetry(
-                f"Variables non modifiables {unknown}. Modifiables (numériques) : {sorted(valid)}."
+                f"Variables non modifiables {unknown}. "
+                f"Modifiables (numériques) : {sorted(config.NUMERIC_FEATURES)}."
             )
         return tools.whatif(ctx.deps, machine_id, overrides)
 
