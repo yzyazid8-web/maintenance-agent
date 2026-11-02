@@ -78,7 +78,8 @@ def trim_history(messages: list):
 
 
 def build_agent() -> Agent[Deps, str]:
-    agent = Agent(build_model(), deps_type=Deps, system_prompt=SYSTEM_PROMPT, retries=2)
+    # instructions
+    agent = Agent(build_model(), deps_type=Deps, instructions=SYSTEM_PROMPT, retries=2)
 
     @agent.tool
     def model_metrics(ctx: RunContext[Deps]) -> dict:
