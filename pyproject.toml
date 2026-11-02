@@ -2,11 +2,11 @@
 name = "maintenance-agent"
 version = "0.1.0"
 description = "Agent de maintenance prédictive (XGBoost + marimo + agent LLM)"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py312"
 extend-exclude = ["notebooks"]
 
 [tool.ruff.lint]
