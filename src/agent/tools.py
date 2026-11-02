@@ -34,7 +34,7 @@ def build_deps() -> Deps:
     metrics = json.loads((config.MODELS_DIR / "metrics.json").read_text())
     df = load_data()
     X = df.drop(columns=[config.TARGET])
-    # Risque affiché = prédictions out-of-fold calibrées 
+    # Risque affiché = prédictions out-of-fold calibrées
     oof = pd.read_csv(config.MODELS_DIR / "oof_scores.csv", index_col="machine_id")
     scored = df.assign(risk=oof["risk"].to_numpy())
     return Deps(

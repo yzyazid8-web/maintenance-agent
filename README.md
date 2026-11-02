@@ -116,30 +116,35 @@ pas 10 000 machines distinctes), **3,4 %** de pannes — fortement déséquilibr
 > là où la ROC-AUC seule le masquerait. Facteurs les plus influents (SHAP) :
 > `rotational_speed`, `tool_wear`, et la feature physique dérivée `power` — cohérents avec la physique des pannes.
 
-**Robustesse du chiffre (en toute transparence).** Le **0,90** est la PR-AUC sur *un* découpage
-(jeu de test). En validation croisée 5-fold elle vaut **0,87 ± 0,01** (plage 0,86–0,90) ; et en
-découpage par **ordre d'arrivée** des relevés — proxy d'un déploiement temporel — elle tombe à
-**0,78**. C'est ce dernier chiffre, le plus pessimiste, qui préfigure le mieux la production : un
-0,90 isolé serait trompeur.
+**Robustesse du chiffre (tous générés par `python -m src.report_metrics`).** Le **0,90** est la
+PR-AUC sur *un* découpage (jeu de test, 68 pannes) ; son **IC bootstrap à 95 % est [0,83 ; 0,96]** —
+large, car les positifs sont rares. En validation croisée 5-fold : **0,87 ± 0,01**. En découpage par
+**ordre d'arrivée** des relevés (proxy d'un déploiement temporel, 39 pannes en test) : **0,78**.
+C'est ce dernier, le plus pessimiste, qui préfigure le mieux la production — un 0,90 isolé serait trompeur.
 
-### Et une simple baseline par règles « métier » ? (quand le ML sert vraiment)
+### Et une simple baseline par règles « métier » ? (où le ML aide, où il n'aide pas)
 
-Les modes de panne d'AI4I 2020 sont **générés par des seuils documentés**. Une baseline FMEA codée
-à la main avec ces mêmes seuils (`src/agent/knowledge_graph.py`) les retrouve donc presque
-parfaitement en **rappel** — HDF/PWF/OSF à ~1,00, et même TWF à 0,96 là où XGBoost le sous-détecte (0,33).
+Les modes HDF, PWF et OSF d'AI4I 2020 sont **générés par des seuils documentés**. Une baseline FMEA
+de trois règles codées à la main (`src/agent/knowledge_graph.py`) les retrouve donc presque parfaitement :
 
-| Détection de panne | Précision | Rappel |
-|---|---|---|
-| Règles FMEA (seuils) | 0,33 | 0,97 |
-| **XGBoost** (seuil par coût) | **0,61** | 0,88 |
+| Détection de panne | Précision | Rappel | Alertes |
+|---|---|---|---|
+| Règles FMEA fortes (HDF + PWF + OSF) | **1,00** | 0,85 | 287 |
+| XGBoost (seuil par coût) | 0,61 | 0,88 | 491 |
 
-**Ce que le ML apporte réellement ici** n'est donc pas un meilleur rappel, mais : une **précision
-doublée** (deux fois moins de fausses alertes, à rappel comparable), une **probabilité calibrée et
-classable** — indispensable au tableau de bord et à l'agent — et aucun seuil à maintenir par type de
-machine. Les pannes **aléatoires** (RNF) restent imprévisibles pour les deux approches (rappel
-~0,05–0,11) : c'est un plafond intrinsèque du jeu de données, pas un défaut du modèle.
+Autrement dit, **sur ce dataset synthétique, trois règles battent le ML en précision** (1,00 vs 0,61) :
+XGBoost ne gagne que **+3 points de rappel, au prix de ~70 % d'alertes en plus**. C'est logique et il
+faut l'assumer — les labels sont fabriqués par ces seuils, le modèle ne fait que les réapprendre.
 
-*(Rapport d'évaluation de l'agent : `eval/report.md`, généré par `python -m src.agent.eval`.)*
+**Alors pourquoi un modèle ?** Parce que l'objectif n'est pas de battre les règles sur AI4I, mais de
+fournir ce qu'une règle binaire ne donne pas : un **score de risque calibré et classable** (0–100 %),
+seul moyen de **prioriser**, et d'alimenter le seuil réglable, le SHAP, le what-if et l'agent. Le
+modèle est le **moteur** ; la contribution du projet est la **chaîne produit** autour. *(Par mode :
+les règles battent même XGBoost sur TWF, 0,96 vs 0,33 ; les pannes aléatoires RNF sont imprévisibles
+pour les deux, ~0,05–0,11 — plafond du dataset.)*
+
+*(Tous les chiffres ci-dessus : `python -m src.report_metrics` → `models/report_metrics.json`.
+Évaluation de l'agent : `eval/report.md`, via `python -m src.agent.eval`.)*
 
 ---
 
