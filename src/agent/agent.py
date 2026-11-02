@@ -80,10 +80,12 @@ def build_agent() -> Agent:
         air_temp_k, process_temp_k, rotational_speed_rpm, torque_nm, tool_wear_min.
         Exemple d'overrides : {'torque_nm': 30}"""
         _require_machine(ctx.deps, machine_id)
-        valid = set(ctx.deps.X.columns)
+        valid = set(config.NUMERIC_FEATURES)  # 'type' (catégorielle) non modifiable
         unknown = [k for k in overrides if k.split("__", 1)[-1] not in valid]
         if unknown:
-            raise ModelRetry(f"Variables inconnues {unknown}. Modifiables : {sorted(valid)}.")
+            raise ModelRetry(
+                f"Variables non modifiables {unknown}. Modifiables (numériques) : {sorted(valid)}."
+            )
         return tools.whatif(ctx.deps, machine_id, overrides)
 
     @agent.tool

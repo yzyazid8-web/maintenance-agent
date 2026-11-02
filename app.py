@@ -336,13 +336,21 @@ def _(mo, run_retrain):
             "_Clique pour relancer l'entraînement (≈ 15-30 s) et régénérer les artefacts._"
         )
     else:
-        from src.model import run as run_training
+        try:
+            from src.model import run as run_training
 
-        _xgb = run_training(n_trials=10)["xgboost"]
-        _out = mo.md(
-            f"✅ Réentraînement terminé — nouvelle **PR-AUC = {_xgb['pr_auc']:.3f}** "
-            f"(ROC-AUC {_xgb['roc_auc']:.3f}).\n\n_Recharge l'app pour servir le nouveau modèle._"
-        )
+            _xgb = run_training(n_trials=10)["xgboost"]
+            _out = mo.md(
+                f"✅ Réentraînement terminé — nouvelle **PR-AUC = {_xgb['pr_auc']:.3f}** "
+                f"(ROC-AUC {_xgb['roc_auc']:.3f}).\n\n_Recharge l'app pour servir le nouveau modèle._"
+            )
+        except ModuleNotFoundError as _e:
+            _out = mo.md(
+                "⚠️ Réentraînement indisponible ici : les dépendances d'entraînement "
+                "(`optuna`, `mlflow`) ne sont pas installées dans cet environnement. "
+                "Installe-les avec `pip install -r requirements-dev.txt`.\n\n"
+                f"`{_e}`"
+            )
     _out
     return
 

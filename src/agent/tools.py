@@ -83,20 +83,37 @@ def whatif(deps: Deps, machine_id: int, overrides: dict) -> dict:
     Tolère les noms SHAP ('num__torque_nm') ; n'applique que les colonnes connues.
     """
     row = deps.X.loc[[machine_id]].copy()
-    # before/after : même modèle de service + même calibrateur -> probabilités comparables.
+    # before/after : meme modèle de service + meme calibrateur -> probabilités comparables.
     before = float(deps.calibrator.predict(deps.pipe.predict_proba(row)[:, 1])[0])
-    applied = {}
+    modes_before = deps.kg.link_modes(row.iloc[0].to_dict())
+    applied, out_of_domain = {}, []
     for key, value in overrides.items():
         col = _clean(key)
-        if col in deps.X.columns:
-            row[col] = value
-            applied[col] = value
+        if col not in deps.X.columns:
+            continue
+        row[col] = value
+        applied[col] = value
+        lo, hi = float(deps.X[col].min()), float(deps.X[col].max())
+        if value < lo or value > hi:
+            out_of_domain.append(
+                {"feature": col, "value": value, "train_min": round(lo, 2), "train_max": round(hi, 2)}
+            )
     after = float(deps.calibrator.predict(deps.pipe.predict_proba(row)[:, 1])[0])
-    return {
+    # Modes FMEA recalculés sur la ligne modifiée 
+    modes_after = deps.kg.link_modes(row.iloc[0].to_dict())
+    result = {
         "risk_before": round(before, 4),
         "risk_after": round(after, 4),
         "applied": applied,
+        "modes_before": modes_before,
+        "modes_after": modes_after,
     }
+    if out_of_domain:
+        result["warning"] = (
+            "Valeur(s) hors du domaine d'entrainement : prédiction extrapolée, peu fiable."
+        )
+        result["out_of_domain"] = out_of_domain
+    return result
 
 
 def top_risk_machines(deps: Deps, n: int = 5) -> list[dict]:

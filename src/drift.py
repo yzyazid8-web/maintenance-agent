@@ -21,6 +21,9 @@ def psi(reference, current, bins: int = 10) -> float:
     edges = np.unique(np.quantile(reference, np.linspace(0, 1, bins + 1)))
     if len(edges) < 2:
         return 0.0
+    # Bornes ouvertes : les valeurs hors plage de référence (= la dérive) tombent dans
+    # les bacs extrêmes au lieu d'être ignorées par np.histogram.
+    edges[0], edges[-1] = -np.inf, np.inf
     ref_counts, _ = np.histogram(reference, bins=edges)
     cur_counts, _ = np.histogram(current, bins=edges)
     ref_pct = np.clip(ref_counts / ref_counts.sum(), 1e-6, None)

@@ -20,6 +20,15 @@ def test_psi_and_wasserstein_high_on_shift():
     assert wasserstein_norm(ref, cur) > 0.5
 
 
+def test_psi_counts_values_outside_reference_range():
+    # Production entièrement au-delà de la plage de référence : sans bornes ouvertes,
+    # np.histogram ignorerait toutes ces valeurs et le PSI serait faussement bas.
+    rng = np.random.default_rng(0)
+    ref = rng.normal(0, 1, 2000)
+    cur = rng.normal(0, 1, 2000) + 50  # décalage hors plage de ref
+    assert psi(ref, cur) > 1.0
+
+
 def test_simulate_drift_shifts_distributions():
     df = load_data().head(1000)
     drifted = simulate_drift(df, severity=1.0)
