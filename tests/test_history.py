@@ -29,9 +29,10 @@ def test_trim_noop_on_short_history():
     assert trim_history(msgs) == msgs
 
 
-def test_instructions_survive_history_trim():
+def test_instructions_survive_history_trim(monkeypatch):
     # P0-1 : les consignes (instructions=) doivent être présentes à CHAQUE requête, même quand
     # l'historique fourni ne contient aucun system prompt (cas d'un historique tronqué).
+    monkeypatch.setenv("LLM_BACKEND", "ollama")  # build l'agent sans GROQ_API_KEY (modèle overridé)
     from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart
     from pydantic_ai.models.function import FunctionModel
 
