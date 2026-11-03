@@ -15,9 +15,9 @@ from src.agent.tools import (
 def test_tools():
     deps = build_deps()
 
-    assert "pr_auc" in get_metrics(deps)
+    assert "pr_auc_test" in get_metrics(deps) and "pr_auc_servi_oof" in get_metrics(deps)
     assert len(feature_importance(deps, top_n=3)) == 3
-    assert dataset_summary(deps)["n_machines"] == 10_000
+    assert dataset_summary(deps)["n_releves"] == 10_000
 
     top = top_risk_machines(deps, n=5)
     assert len(top) == 5

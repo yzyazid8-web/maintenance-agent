@@ -20,7 +20,7 @@ sujet est de **transformer un modèle ML en produit réellement utilisable**,
 en **greffant un agent IA directement dans le tableau de bord marimo**.
 
 Au lieu d'un simple dashboard que l'utilisateur doit savoir lire, on peut **lui parler** :
-*« Quelles machines sont à risque ? Pourquoi la machine 7593 ? Que faire ? Y a-t-il une dérive des
+*« Quels relevés sont à risque ? Pourquoi le relevé 7593 ? Que faire ? Y a-t-il une dérive des
 données ? »* — et l'agent répond en **appelant les vrais outils** (modèle, SHAP, graphe de pannes,
 monitoring), sans rien inventer.
 
@@ -67,7 +67,7 @@ Ce projet, à partir de mesures machine (couple, vitesse, usure outil, températ
 | | |
 |---|---|
 | 🤖 **Assistant IA** | agent conversationnel dans un panneau latéral, répond sur l'app, les machines, les causes et les actions |
-| 📊 **Dashboard** | KPIs, table des machines à risque (seuil réglable), importances SHAP globales, inspecteur SHAP par machine |
+| 📊 **Dashboard** | KPIs, table des relevés à risque (seuil réglable), importances SHAP globales, inspecteur SHAP par relevé |
 | 🕸️ **Diagnostic** | knowledge graph des modes de panne (FMEA) → causes et actions **traçables** |
 | 🩺 **Supervision** | simulation de dérive + rapport (PSI / Wasserstein / AUC) + bouton de réentraînement |
 
@@ -96,8 +96,9 @@ Ce projet, à partir de mesures machine (couple, vitesse, usure outil, températ
 - **Évaluation** (`eval/golden_set.yaml`, 31 questions par catégorie) : appels d'outils **et
   exactitude des arguments** (déterministe), **refus** des questions hors-sujet et des injections,
   gestion des **ID invalides**, et *groundedness* notée par un **LLM-as-judge distinct de l'agent**
-  (qui reçoit les instructions de l'agent pour ne pas pénaliser les réponses légitimes). Moyenne sur
-  plusieurs runs ; toutes les métriques — y compris les moins bonnes — sont publiées.
+  (qui reçoit les instructions de l'agent pour ne pas pénaliser les réponses légitimes). Le nombre
+  de runs est réglable (`EVAL_RUNS`, 1 par défaut) ; **chaque métrique affiche son dénominateur**, et
+  toutes — y compris les moins bonnes — sont publiées dans `eval/report.md`.
 
 ---
 

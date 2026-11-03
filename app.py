@@ -47,6 +47,8 @@ def _():
         MODELS_DIR / "fold_models.joblib"
     )  # 1 modèle par fold (SHAP cohérent)
     metrics = json.loads((MODELS_DIR / "metrics.json").read_text())
+    _rp = MODELS_DIR / "report_metrics.json"
+    report_metrics = json.loads(_rp.read_text()) if _rp.exists() else {}
     df = load_data()
     return (
         C_PANNE,
@@ -60,6 +62,7 @@ def _():
         mo,
         pipe,
         plt,
+        report_metrics,
     )
 
 
@@ -86,9 +89,12 @@ def _(mo):
         """
         # 🔧 Maintenance prédictive — tableau de bord
 
-        Prédiction du risque de panne de machines-outils (XGBoost), avec explicabilité SHAP,
+        Estimation du risque de panne de machines-outils (XGBoost), avec explicabilité SHAP,
         diagnostic des modes de panne (FMEA) et surveillance de la dérive des données.
         L'assistant IA est dans le panneau de gauche.
+
+        _Chaque ligne est un **relevé** (point de fonctionnement), pas une machine distincte ; le
+        modèle **classe un état courant** à partir des capteurs — il n'anticipe pas à un horizon donné._
         """
     )
     return
@@ -99,15 +105,15 @@ def _(mo):
     mo.accordion(
         {
             "❓ À quoi sert ce tableau de bord ?": mo.md(
-                "Il prédit le **risque de panne** de chaque machine (modèle XGBoost, dataset AI4I 2020) "
+                "Il estime le **risque de panne** de chaque relevé (modèle XGBoost, dataset AI4I 2020) "
                 "pour aider à **prioriser la maintenance**. Les décisions sont **explicables** (SHAP) "
                 "et les données **surveillées** (dérive)."
             ),
             "📊 Comment lire les sections ?": mo.md(
-                "- **KPIs** : taille du parc, taux de panne, performance du modèle (PR-AUC, ROC-AUC).\n"
-                "- **Machines à risque** : liste triée selon le *seuil de risque* (curseur).\n"
+                "- **KPIs** : nombre de relevés, taux de panne, performance du modèle (PR-AUC).\n"
+                "- **Relevés à risque** : liste triée selon le *seuil de risque* (curseur).\n"
                 "- **Importance SHAP globale** : les variables qui pèsent le plus dans les prédictions.\n"
-                "- **Inspecteur** : pourquoi *une* machine précise est à risque (SHAP local).\n"
+                "- **Inspecteur** : pourquoi *un* relevé précis est à risque (SHAP local).\n"
                 "- **Supervision (MLOps)** : simulation de dérive des données + réentraînement."
             ),
             "🤖 L'assistant (panneau de gauche)": mo.md(
@@ -158,19 +164,26 @@ def _(metrics, mo):
 
 
 @app.cell
-def _(metrics, mo, scored, threshold):
+def _(metrics, mo, report_metrics, scored, threshold):
+    from sklearn.metrics import average_precision_score as _ap
+
     flagged = int((scored["risk"] >= threshold.value).sum())
+    # PR-AUC mise en avant = celle des scores RÉELLEMENT SERVIS (OOF calibré, hors-échantillon).
+    _served = _ap(scored["machine_failure"], scored["risk"])
+    _mo = report_metrics.get("model", {})
+    _cap = (
+        f"test {_mo.get('pr_auc_test', metrics['xgboost']['pr_auc']):.2f}"
+        f" · CV {_mo.get('pr_auc_cv_mean', '?')} · ordre d'arrivée {_mo.get('pr_auc_temporal', '?')}"
+        if _mo
+        else "hors-échantillon (OOF)"
+    )
     mo.hstack(
         [
             mo.stat(f"{len(scored):,}", label="Relevés"),
             mo.stat(f"{scored['machine_failure'].mean():.1%}", label="Taux de panne réel"),
-            mo.stat(
-                f"{metrics['xgboost']['pr_auc']:.2f}",
-                label="PR-AUC (modèle)",
-                caption="test ; CV 0,87 · ordre d'arrivée 0,78",
-            ),
-            mo.stat(f"{metrics['xgboost']['roc_auc']:.2f}", label="ROC-AUC"),
-            mo.stat(f"{flagged:,}", label=f"Signalées (≥ {threshold.value:.2f})"),
+            mo.stat(f"{_served:.2f}", label="PR-AUC (servie, OOF)", caption=_cap),
+            mo.stat(f"{metrics['xgboost']['roc_auc']:.2f}", label="ROC-AUC (test)"),
+            mo.stat(f"{flagged:,}", label=f"Signalés (≥ {threshold.value:.2f})"),
         ],
         justify="start",
         gap=1.5,
@@ -188,7 +201,7 @@ def _(mo, scored, threshold):
     )
     display = mo.vstack(
         [
-            mo.md(f"### Machines à risque (≥ {threshold.value:.2f}) — {len(at_risk)} machine(s)"),
+            mo.md(f"### Relevés à risque (≥ {threshold.value:.2f}) — {len(at_risk)} relevé(s)"),
             mo.ui.table(at_risk, page_size=10),
         ]
     )
@@ -206,18 +219,20 @@ def _(mo):
 def _(C_SAIN, MUTED, plt, scored):
     from sklearn.calibration import calibration_curve
 
+    # Bins UNIFORMES : la zone de décision (risque > ~0,2) est évaluée, au lieu d'être écrasée
+    # par les 95 % de relevés quasi nuls (ce que donnaient les bins par quantiles).
     _frac, _mean = calibration_curve(
         scored["machine_failure"].to_numpy(),
         scored["risk"].to_numpy(),
         n_bins=10,
-        strategy="quantile",
+        strategy="uniform",
     )
     _fig, _ax = plt.subplots(figsize=(4.5, 4))
     _ax.plot([0, 1], [0, 1], "--", color=MUTED, linewidth=1, label="parfaitement calibré")
     _ax.plot(_mean, _frac, "o-", color=C_SAIN, label="modèle")
     _ax.set_xlabel("Probabilité prédite")
     _ax.set_ylabel("Taux de panne observé")
-    _ax.set_title("Courbe de fiabilité (sigmoïde, calibration cross-fit hors-échantillon)")
+    _ax.set_title("Courbe de fiabilité (scores OOF, calibrateur Platt global)")
     _ax.legend(fontsize=8)
     _fig.tight_layout()
     _ax
@@ -251,8 +266,8 @@ def _(mo, scored):
         start=0,
         stop=_max,
         step=1,
-        value=int(scored["risk"].idxmax()),  # par défaut : la machine la plus à risque
-        label=f"Inspecter n'importe quelle machine (index 0–{_max})",
+        value=int(scored["risk"].idxmax()),  # par défaut : le relevé le plus à risque
+        label=f"Inspecter n'importe quel relevé (index 0–{_max})",
     )
     machine
     return (machine,)
@@ -261,7 +276,7 @@ def _(mo, scored):
 @app.cell
 def _(C_PANNE, C_SAIN, MUTED, X, explain_row, fold_models, machine, mo, plt, scored):
     if machine.value is None or int(machine.value) not in scored.index:
-        out = mo.md("_Saisis un index de machine valide pour l'inspecter._")
+        out = mo.md("_Saisis un index de relevé valide pour l'inspecter._")
     else:
         _idx = int(machine.value)
         _model = fold_models[int(scored.loc[_idx, "fold"])]  # modèle qui n'a pas vu cette ligne
@@ -274,7 +289,7 @@ def _(C_PANNE, C_SAIN, MUTED, X, explain_row, fold_models, machine, mo, plt, sco
         _ax.barh(_names, _vals, color=_colors)
         _ax.axvline(0, color=MUTED, linewidth=0.8)
         _ax.set_title(
-            f"Machine {_idx} — risque {scored.loc[_idx, 'risk']:.1%} "
+            f"Relevé {_idx} — risque {scored.loc[_idx, 'risk']:.1%} "
             f"· SHAP du modèle hors-échantillon"
         )
         _ax.grid(axis="y", visible=False)

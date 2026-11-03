@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 import joblib
 import pandas as pd
+from sklearn.metrics import average_precision_score
 from sklearn.pipeline import Pipeline
 
 from src import config
@@ -67,8 +68,23 @@ def _model_for(deps: Deps, machine_id: int) -> Pipeline:
 
 
 def get_metrics(deps: Deps) -> dict:
-    """Performances du modèle XGBoost (PR-AUC, ROC-AUC)"""
-    return deps.metrics["xgboost"]
+    
+    m = deps.metrics["xgboost"]
+    served = float(average_precision_score(deps.scored[config.TARGET], deps.scored["risk"]))
+    out: dict[str, object] = {
+        "pr_auc_servi_oof": round(served, 3),  # ce que voit l'utilisateur (hors-échantillon)
+        "pr_auc_test": round(float(m["pr_auc"]), 3),
+        "roc_auc_test": round(float(m["roc_auc"]), 3),
+    }
+    rp = config.MODELS_DIR / "report_metrics.json"
+    if rp.exists():
+        mo = json.loads(rp.read_text())["model"]
+        out["pr_auc_cv"] = f"{mo['pr_auc_cv_mean']} ± {mo['pr_auc_cv_std']}"
+        out["pr_auc_ic95_test"] = mo["pr_auc_test_ci95"]
+        out["pr_auc_ordre_arrivee"] = mo[
+            "pr_auc_temporal"
+        ]  # proxy déploiement temporel
+    return out
 
 
 def feature_importance(deps: Deps, top_n: int = 6) -> dict:
@@ -79,7 +95,7 @@ def feature_importance(deps: Deps, top_n: int = 6) -> dict:
 
 
 def predict_risk(deps: Deps, machine_id: int) -> float:
-    """Probabilité de panne d'une machine (par son index)"""
+    """Probabilité de panne d'un relevé (par son index)"""
     return round(float(deps.scored.loc[machine_id, "risk"]), 4)
 
 
@@ -99,7 +115,7 @@ def whatif(deps: Deps, machine_id: int, overrides: dict) -> dict:
     applied, out_of_domain = {}, []
     for key, value in overrides.items():
         col = _clean(key)
-        if col not in deps.X.columns:
+        if col not in config.NUMERIC_FEATURES:  # variables numériques seulement
             continue
         row[col] = value
         applied[col] = value
@@ -139,8 +155,8 @@ def top_risk_machines(deps: Deps, n: int = 5) -> list[dict]:
 
 
 def dataset_summary(deps: Deps) -> dict:
-    """Volumétrie et taux de panne observé"""
+    """Volumétrie (relevés) et taux de panne observé"""
     return {
-        "n_machines": int(len(deps.scored)),
+        "n_releves": int(len(deps.scored)),
         "failure_rate": round(float(deps.scored["machine_failure"].mean()), 4),
     }
