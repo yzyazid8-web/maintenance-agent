@@ -91,8 +91,8 @@ def explain_prediction(deps: Deps, machine_id: int, top_n: int = 5) -> dict:
 
 
 def whatif(deps: Deps, machine_id: int, overrides: dict) -> dict:
-    """Re-score une machine après modification de variables brutes (scénario what-if) """
-    model = _model_for(deps, machine_id)  
+    """Re-score une machine après modification de variables brutes (scénario what-if)"""
+    model = _model_for(deps, machine_id)
     row = deps.X.loc[[machine_id]].copy()
     risk_before = float(deps.calibrator.predict(model.predict_proba(row)[:, 1])[0])
     modes_before = deps.kg.link_modes(row.iloc[0].to_dict())

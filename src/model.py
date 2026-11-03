@@ -28,7 +28,7 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 
 def _champion_pr_auc(X_test, y_test) -> float | None:
-   
+
     path = config.MODELS_DIR / "pipeline.joblib"
     if not path.exists():
         return None
