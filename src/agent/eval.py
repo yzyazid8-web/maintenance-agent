@@ -1,4 +1,5 @@
 """Évaluation de l'agent : appels d'outils + exactitude des arguments + refus + groundedness."""
+
 import yaml
 from pydantic import BaseModel, Field
 
@@ -405,7 +406,8 @@ def to_markdown(
         "- Le juge est un **modèle distinct** de l'agent et reçoit ses instructions pour ne pas "
         "pénaliser les réponses légitimes sur l'application. Il **n'est pas encore validé contre "
         "une annotation humaine** : la groundedness est indicative.",
-        "- Mémoire : la sauvegarde persiste entre runs (chromadb), le rappel n'est donc pas isolé.",
+        "- Mémoire : l'éval utilise une base **isolée** (temporaire) — elle ne pollue pas la mémoire "
+        "de démo `agent_memory/` ; `recall` peut filtrer par métadonnée et par distance.",
     ]
     return "\n".join(lines)
 

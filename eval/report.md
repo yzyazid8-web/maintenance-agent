@@ -76,4 +76,4 @@
 - Outils et arguments vérifiés de façon **déterministe** (lecture des appels dans l'historique). Refus et ID invalides détectés par **heuristique** (mots-clés) : utile mais imparfait.
 - Seules les erreurs d'**infrastructure** (quota/réseau/serveur) sont exclues ; un **échec imputable à l'agent** (ex. ID invalide mal géré, appel d'outil cassé) est compté comme raté.
 - Le juge est un **modèle distinct** de l'agent et reçoit ses instructions pour ne pas pénaliser les réponses légitimes sur l'application. Il **n'est pas encore validé contre une annotation humaine** : la groundedness est indicative.
-- Mémoire : la sauvegarde persiste entre runs (chromadb), le rappel n'est donc pas isolé.
+- Mémoire : l'éval utilise une base **isolée** (temporaire) — elle ne pollue pas la mémoire de démo `agent_memory/` ; `recall` peut filtrer par métadonnée et par distance.
