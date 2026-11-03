@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-import chromadb
 import networkx as nx
+import numpy as np
 import yaml
 
 from src import config
@@ -29,7 +29,9 @@ class KnowledgeGraph:
         self.ontology = yaml.safe_load(path.read_text(encoding="utf-8"))
         self.graph = self._build_graph()
         self._embed_fn = embed_fn
-        self._collection: chromadb.Collection | None = None  # index vectoriel chromadb
+        # Index vectoriel en numpy.
+        self._node_ids: list[str] | None = None
+        self._node_vecs: np.ndarray | None = None
 
     def _build_graph(self) -> nx.DiGraph:
         g = nx.DiGraph()
@@ -101,26 +103,20 @@ class KnowledgeGraph:
         return self._embed_fn
 
     def _ensure_index(self) -> None:
-        if self._collection is not None:
+        if self._node_vecs is not None:
             return
-        client = chromadb.EphemeralClient()
-        self._collection = client.get_or_create_collection("kg_nodes")
-        nodes = list(self.graph.nodes)
-        texts = [self.graph.nodes[n]["text"] for n in nodes]
-        self._collection.add(
-            ids=nodes,
-            documents=texts,
-            embeddings=self._embed(texts),  # type: ignore[arg-type]  # list[list[float]] accepté
-            metadatas=[{"kind": self.graph.nodes[n]["kind"]} for n in nodes],
-        )
+        self._node_ids = list(self.graph.nodes)
+        texts = [self.graph.nodes[n]["text"] for n in self._node_ids]
+        self._node_vecs = np.asarray(self._embed(texts), dtype=float)
 
     def semantic_search(self, query: str, k: int = 3) -> list[str]:
-        """Nœuds du graphe les plus proches sémantiquement de la question."""
+        """Noeuds du graphe les plus proches sémantiquement (similarité cosinus, embeddings normalisés)."""
         self._ensure_index()
-        assert self._collection is not None  # garanti par _ensure_index
-        k = min(k, self.graph.number_of_nodes())
-        res = self._collection.query(query_embeddings=self._embed([query]), n_results=k)  # type: ignore[arg-type]
-        return res["ids"][0]
+        assert self._node_ids is not None and self._node_vecs is not None
+        q = np.asarray(self._embed([query])[0], dtype=float)
+        sims = self._node_vecs @ q
+        top = np.argsort(sims)[::-1][: min(k, len(self._node_ids))]
+        return [self._node_ids[i] for i in top]
 
     def expand_subgraph(self, seeds, hops: int = 2) -> nx.Graph:
         """Étend les nœuds de départ par `hops` sauts (voisins entrants et sortants)."""
@@ -141,19 +137,29 @@ class KnowledgeGraph:
         sub = self.expand_subgraph(seeds, hops)
         modes = [n for n in sub.nodes if self.graph.nodes[n]["kind"] == "mode"]
 
-        lines = []
-        for mode in modes:
-            d = self.describe_mode(mode)
-            lines.append(f"### {d['label']}\n{d['description']}")
-            for field in ("causes", "symptoms", "components", "actions", "sensors"):
-                if d.get(field):
-                    lines.append(f"- {field} : {', '.join(d[field])}")
+        lines = [
+            f"### {self.describe_mode(m)['label']}\n{self.describe_mode(m)['description']}"
+            for m in modes
+        ]
 
-        # Structure du sous-graphe : triplets
+        # Structure du sous-graphe : triplets.
         triplets = [f"{s} --{self.graph.edges[s, t]['rel']}--> {t}" for s, t in sub.edges]
         if triplets:
-            lines.append("#### Relations (graphe)")
+            lines.append("#### Relations (triplets)")
             lines.extend(f"- {t}" for t in triplets)
+
+        # Éléments partages entre modes.
+        bridges = []
+        for n in sub.nodes:
+            if self.graph.nodes[n]["kind"] == "mode":
+                continue
+            linked = sorted(m for m in self.graph.predecessors(n) if m in modes)
+            if len(linked) >= 2:
+                bridges.append(f"{n} relie {', '.join(linked)}")
+        if bridges:
+            lines.append("#### Éléments partagés entre modes")
+            lines.extend(f"- {b}" for b in bridges)
+
         if not modes and not triplets:
             lines = [f"- {self.graph.nodes[n]['text']}" for n in sub.nodes]
 
@@ -162,5 +168,6 @@ class KnowledgeGraph:
             "seeds": list(seeds),
             "modes": modes,
             "relations": triplets,
+            "bridges": bridges,
             "context": "\n".join(lines) if lines else "Aucune connaissance pertinente trouvée.",
         }

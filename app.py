@@ -162,7 +162,7 @@ def _(metrics, mo, scored, threshold):
     flagged = int((scored["risk"] >= threshold.value).sum())
     mo.hstack(
         [
-            mo.stat(f"{len(scored):,}", label="Machines"),
+            mo.stat(f"{len(scored):,}", label="Relevés"),
             mo.stat(f"{scored['machine_failure'].mean():.1%}", label="Taux de panne réel"),
             mo.stat(f"{metrics['xgboost']['pr_auc']:.2f}", label="PR-AUC (modèle)"),
             mo.stat(f"{metrics['xgboost']['roc_auc']:.2f}", label="ROC-AUC"),

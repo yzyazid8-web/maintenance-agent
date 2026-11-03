@@ -8,7 +8,8 @@ from src.model import _should_promote, train_baseline, train_xgboost
 def test_promotion_guard():
     assert _should_promote(0.90, None)  # pas de champion -> promu
     assert _should_promote(0.91, 0.89)  # meilleur -> promu
-    assert _should_promote(0.898, 0.90)  # quasi égal (dans la tolérance) -> promu
+    assert _should_promote(0.90, 0.90)  # égal -> promu
+    assert not _should_promote(0.899, 0.90)  # même un peu moins bon -> conservé (pas de cliquet)
     assert not _should_promote(0.80, 0.90)  # nettement moins bon -> conservé
 
 

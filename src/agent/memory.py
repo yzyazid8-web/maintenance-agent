@@ -40,8 +40,14 @@ class EpisodicMemory:
         )
         return episode_id
 
-    def recall(self, query: str, k: int = 3, where: dict | None = None) -> list[dict]:
-        """Retrouve des épisodes par similarité. `where` filtre par métadonnée (ex. {'machine_id': 42})."""
+    def recall(
+        self, query: str, k: int = 3, where: dict | None = None, max_distance: float | None = None
+    ) -> list[dict]:
+        """Retrouve des épisodes par similarité.
+
+        `where` filtre par métadonnée (ex. {'machine_id': 42} ou {'session_id': ...} pour isoler).
+        `max_distance` écarte les notes trop éloignées (évite de citer des souvenirs sans rapport).
+        """
         count = self.collection.count()
         if count == 0:
             return []
@@ -53,7 +59,10 @@ class EpisodicMemory:
         docs = (res["documents"] or [[]])[0]
         dists = (res["distances"] or [[]])[0]
         metas = (res.get("metadatas") or [[]])[0] or [{}] * len(docs)
-        return [
-            {"text": d, "distance": round(float(dist), 4), **(m or {})}
-            for d, dist, m in zip(docs, dists, metas, strict=False)
-        ]
+        out = []
+        for d, dist, m in zip(docs, dists, metas, strict=False):
+            distance = round(float(dist), 4)
+            if max_distance is not None and distance > max_distance:
+                continue  # note trop éloignée : on ne la cite pas
+            out.append({"text": d, "distance": distance, **(m or {})})
+        return out

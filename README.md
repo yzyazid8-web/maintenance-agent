@@ -34,9 +34,10 @@ Ce projet, de bout en bout :
 
 - **IA agentique / LLM** : **agent à outils** (Pydantic AI), **GraphRAG** sur un knowledge
   graph de modes de panne, **mémoire** épisodique, **guardrails**, et **évaluation** (LLM-as-judge).
-- **MLOps** : détection de **dérive** (PSI, Wasserstein, domain classifier), réentraînement avec
-  garde-fou **champion/challenger** (un nouveau modèle n'est promu que s'il égale ou dépasse l'actuel ;
-  chaque run est journalisé), suivi **MLflow**, **Docker**, **CI** GitHub Actions (lint + tests + build).
+- **MLOps** : détection de **dérive** (PSI, Wasserstein, domain classifier, χ² sur `type`),
+  réentraînement avec garde-fou **champion/challenger** (le challenger n'est promu que s'il **égale
+  ou dépasse** le champion **rescoré sur le même jeu de test** ; chaque run journalisé), suivi
+  **MLflow**, **Docker**, **CI** GitHub Actions (ruff + mypy + tests + build).
 - **ML & explicabilité** : XGBoost sur données déséquilibrées, **SHAP** (global + local). Pour une
   machine donnée, le **risque, le SHAP et le what-if proviennent du même modèle hors-échantillon**
   (le modèle du fold qui ne l'a pas vue) — pas de contradiction entre ce qui est affiché et ce qui est expliqué.
@@ -51,10 +52,10 @@ injections, groundedness) → `eval/report.md`.
 
 ## 🏭 Le problème 
 
-En maintenance industrielle, on veut **anticiper les pannes** pour intervenir *avant* la casse.
+En maintenance industrielle, on veut détecter les pannes au plus tôt pour intervenir *avant* la casse.
 Ce projet, à partir de mesures machine (couple, vitesse, usure outil, températures) :
 
-1. **prédit** le risque de panne de chaque machine,
+1. **estime** le risque de panne de chaque relevé (classification d'état — voir *Limites* pour la nuance « prédictif »),
 2. **explique** pourquoi (variables en cause, mode de panne probable),
 3. **recommande** des actions correctives **ancrées** dans une base de connaissances,
 4. **surveille** que les données restent conformes à l'entraînement (dérive).
@@ -239,6 +240,12 @@ docker run -p 7860:7860 -e GROQ_API_KEY=gsk_... maintenance-agent
 
 ## ⚠️ Limites (en toute transparence)
 
+- **Classification d'état, pas (encore) de prévision à horizon.** Le label `machine_failure` est
+  **contemporain** des mesures : le modèle détecte un état de panne à partir des capteurs du même
+  instant, il n'anticipe pas à N heures/cycles. Les 10 000 lignes sont des **relevés** (points de
+  fonctionnement), pas 10 000 machines distinctes. Un vrai cas de maintenance *prédictive* demanderait
+  des **séries temporelles par équipement** (p. ex. NASA C-MAPSS, estimation de RUL) — ce serait
+  l'extension naturelle, en branchant la même chaîne agent dessus.
 - **AI4I 2020** est un dataset **synthétique** (réaliste mais généré) ; il inclut des pannes
   purement **aléatoires** (RNF) qui plafonnent la performance atteignable.
 - La **dérive est simulée** (dérive covariable sur un batch fabriqué) pour démontrer la chaîne de

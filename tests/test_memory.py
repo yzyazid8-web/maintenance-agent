@@ -40,3 +40,10 @@ def test_recall_filters_by_machine(tmp_path):
     res = mem.recall("machine", k=5, where={"machine_id": 7})
     assert len(res) == 1
     assert res[0]["machine_id"] == 7
+
+
+def test_recall_max_distance_filters_out_far_notes(tmp_path):
+    mem = EpisodicMemory(embed_fn=_fake_embed, path=tmp_path / "dist")
+    mem.remember("Machine 7 : usure OSF couple eleve", {"machine_id": 7})
+    # un seuil de distance nul n'accepte qu'une correspondance quasi parfaite -> ici rien
+    assert mem.recall("temperature hdf", k=5, max_distance=0.0) == []

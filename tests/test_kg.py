@@ -71,7 +71,16 @@ def test_graphrag_serializes_graph_structure():
     out = kg.graphrag("usure de l'outil de coupe", k=3, hops=1)
     assert out["relations"], "le sous-graphe devrait exposer des triplets source--rel-->cible"
     assert any("-->" in t for t in out["relations"])
-    assert "Relations (graphe)" in out["context"]
+    assert "Relations (triplets)" in out["context"]
+
+
+def test_two_instances_do_not_share_index():
+    # P1-6 : deux KG avec des embedders de dimensions différentes doivent rester indépendants
+    # (l'ancien chromadb.EphemeralClient partageait sa collection -> collision de dimension).
+    kg1 = KnowledgeGraph(embed_fn=lambda ts: [[float(len(t))] for t in ts])  # dim 1
+    kg2 = KnowledgeGraph(embed_fn=lambda ts: [[1.0, float(len(t)), 0.0] for t in ts])  # dim 3
+    assert kg1.semantic_search("usure", k=2)
+    assert kg2.semantic_search("usure", k=2)  # ne doit pas lever
 
 
 def test_expand_subgraph_connects_mode_to_its_nodes():

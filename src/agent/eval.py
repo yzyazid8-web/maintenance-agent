@@ -266,12 +266,16 @@ def _run_item(agent, deps, judge, item: dict, system_prompt: str) -> dict:
 
 def evaluate(runs: int = 3, pause: float = 2.0) -> list[list[dict]]:
     """Exécute l'agent sur le golden set `runs` fois. Retourne une liste de runs."""
+    import tempfile
     import time
 
     from src.agent.agent import SYSTEM_PROMPT, build_agent
+    from src.agent.memory import EpisodicMemory
     from src.agent.tools import build_deps
 
     agent, deps, judge = build_agent(), build_deps(), build_judge()
+    # Mémoire isolée : l'éval ne doit pas polluer la base de démo `agent_memory/`.
+    deps.memory = EpisodicMemory(path=tempfile.mkdtemp())
     golden = load_golden_set()
     all_runs = []
     for run in range(runs):

@@ -23,25 +23,22 @@ from src.data import load_data, split_data
 from src.features import build_pipeline
 
 COST_FN, COST_FP = 10.0, 1.0
-PROMOTE_EPS = 0.005  # on ne remplace pas le champion par un challenger nettement moins bon
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 
-def _champion_pr_auc() -> float | None:
-    """PR-AUC du modèle actuellement servi (None si aucun artefact)."""
-    path = config.MODELS_DIR / "metrics.json"
+def _champion_pr_auc(X_test, y_test) -> float | None:
+   
+    path = config.MODELS_DIR / "pipeline.joblib"
     if not path.exists():
         return None
-    try:
-        return float(json.loads(path.read_text())["xgboost"]["pr_auc"])
-    except (KeyError, ValueError):
-        return None
+    champion = joblib.load(path)
+    return float(average_precision_score(y_test, champion.predict_proba(X_test)[:, 1]))
 
 
-def _should_promote(new_pr: float, champion_pr: float | None, eps: float = PROMOTE_EPS) -> bool:
-    """Promeut le challenger s'il n'est pas nettement moins bon que le champion (PR-AUC)."""
-    return champion_pr is None or new_pr >= champion_pr - eps
+def _should_promote(new_pr: float, champion_pr: float | None) -> bool:
+    """Promeut le challenger seulement s'il égale ou dépasse le champion (pas de cliquet descendant)."""
+    return champion_pr is None or new_pr >= champion_pr
 
 
 def _log_history(n_trials: int, decision: dict) -> None:
@@ -167,15 +164,14 @@ def run(n_trials: int = 30) -> dict:
             mlflow.sklearn.log_model(
                 pipe, artifact_path="model", serialization_format="cloudpickle"
             )
-        except (
-            Exception
-        ) as exc:  
+        except Exception as exc:
             print(f"[mlflow] log_model ignoré : {type(exc).__name__}: {exc}")
 
     config.MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Champion / challenger : on ne remplace les artefacts que si le nouveau modèle tient la route.
-    champion_pr = _champion_pr_auc()
+    # Champion / challenger : on ne remplace les artefacts que si le challenger égale/dépasse le
+    # champion.
+    champion_pr = _champion_pr_auc(X_test, y_test)
     new_pr = xgb_metrics["pr_auc"]
     promoted = _should_promote(new_pr, champion_pr)
     decision = {
@@ -185,15 +181,13 @@ def run(n_trials: int = 30) -> dict:
     }
 
     if promoted:
-        joblib.dump(
-            pipe, config.MODELS_DIR / "pipeline.joblib"
-        )  # modèle final
+        joblib.dump(pipe, config.MODELS_DIR / "pipeline.joblib")  # modèle final
 
         # 5 fold
         y_all = df[config.TARGET].to_numpy()
         raw_oof, fold_of, fold_models = _oof_fold_models(df, best_params)
 
-        # UN SEUL calibrateur Platt sur les scores OOF
+        # UN seul calibrateur Platt sur les scores OOF
         calibrator = PlattCalibrator().fit(raw_oof, y_all)
         cal_oof = calibrator.predict(raw_oof)
 
@@ -212,7 +206,7 @@ def run(n_trials: int = 30) -> dict:
         }
         (config.MODELS_DIR / "metrics.json").write_text(json.dumps(results, indent=2))
     else:
-        # Challenger moins bon 
+        # Challenger moins bon
         results = json.loads((config.MODELS_DIR / "metrics.json").read_text())
 
     _log_history(n_trials, decision)
