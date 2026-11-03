@@ -145,7 +145,7 @@ _RETRYABLE = {
     "ModelHTTPError",
     "ModelRequestRejectedError",
 }
-# Erreurs d'INFRA uniquement (quota/réseau/serveur) : items EXCLUS des métriques (non évaluables).
+# Erreurs d'infra uniquement
 _INFRA_ERRORS = {
     "ModelRateLimitError",
     "ModelConnectionError",
@@ -305,12 +305,12 @@ def to_markdown(
 
     runs = len(all_runs)
     n_items = len(all_runs[0]) if all_runs else 0
+    _runs_note = f"moyenne ± écart-type sur {runs} runs" if runs > 1 else "run unique"
     lines = [
         "# Évaluation de l'agent",
         "",
         f"- Généré le **{datetime.now(UTC).date().isoformat()}** · commit **{_git_commit()}**",
-        f"- Jeu de référence : **{n_items} questions** par catégorie · **{runs} run(s)** "
-        "(moyenne ± écart-type).",
+        f"- Jeu de référence : **{n_items} questions** par catégorie · **{runs} run** ({_runs_note}).",
     ]
     if agent_model:
         lines.append(f"- Agent évalué : **{agent_model}**.")

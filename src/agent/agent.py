@@ -63,6 +63,7 @@ def unknown_overrides(overrides) -> list[str]:
 
 
 MAX_HISTORY_TURNS = 6  # bornage : on ne renvoie au LLM que les N derniers tours
+MEMORY_MAX_DISTANCE = 0.6  # distance cosinus max pour qu'une note mémoire soit jugée pertinente
 
 
 def _is_user_turn(message) -> bool:
@@ -180,13 +181,12 @@ def build_agent() -> Agent[Deps, str]:
         if not 1 <= k <= 20:
             raise ModelRetry("k doit être entre 1 et 20.")
         where = {"machine_id": machine_id} if machine_id is not None else None
-        return ctx.deps.memory.recall(query, k, where=where)
+        # seuil de distance (cosinus) : on ne cite pas des notes sans rapport avec la requête
+        return ctx.deps.memory.recall(query, k, where=where, max_distance=MEMORY_MAX_DISTANCE)
 
     @agent.tool
     def check_drift(ctx: RunContext[Deps], severity: float = 1.0) -> dict:
-        """Analyse une dérive SIMULÉE (batch de production fabriqué à la sévérité donnée,
-        0 = aucune) : statut par variable + AUC globale. Ce n'est PAS une dérive observée sur
-        des données réelles - c'est une démonstration de la chaîne de surveillance."""
+        """Analyse une dérive simulé ."""
         if not 0 <= severity <= 5:
             raise ModelRetry("severity doit être entre 0 et 5 (0 = aucune dérive)")
         current = simulate_drift(ctx.deps.X, severity)
@@ -194,7 +194,7 @@ def build_agent() -> Agent[Deps, str]:
         report["severity"] = severity
         report["simulated"] = True
         report["note"] = (
-            "Dérive SIMULÉE (batch fabriqué à cette sévérité), pas des données de production réelles."
+            "Dérive simulée (batch fabriqué à cette sévérité), pas des données réelles."
         )
         return report
 

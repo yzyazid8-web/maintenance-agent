@@ -20,7 +20,7 @@ def _():
 
     from src.config import MODELS_DIR
     from src.data import load_data
-    from src.explain import explain_row, global_importance
+    from src.explain import explain_row, global_importance_folds
 
     INK, MUTED, GRID, SURFACE = "#0b0b0b", "#898781", "#e1e0d9", "#fcfcfb"
     C_SAIN, C_PANNE = "#2a78d6", "#eb6834"
@@ -57,7 +57,7 @@ def _():
         df,
         explain_row,
         fold_models,
-        global_importance,
+        global_importance_folds,
         metrics,
         mo,
         pipe,
@@ -246,8 +246,8 @@ def _(mo):
 
 
 @app.cell
-def _(C_SAIN, X, global_importance, pipe, plt):
-    imp = global_importance(pipe, X.sample(500, random_state=0))
+def _(C_SAIN, X, fold_models, global_importance_folds, plt):
+    imp = global_importance_folds(fold_models, X.sample(500, random_state=0))
     _names = list(imp.keys())[::-1]
     _vals = list(imp.values())[::-1]
     _fig, _ax = plt.subplots(figsize=(6, 4))

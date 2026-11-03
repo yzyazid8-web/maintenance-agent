@@ -13,7 +13,7 @@ from src.agent.knowledge_graph import KnowledgeGraph
 from src.agent.memory import EpisodicMemory
 from src.calibration import PlattCalibrator
 from src.data import load_data
-from src.explain import explain_row, global_importance
+from src.explain import explain_row, global_importance_folds
 
 
 @dataclass
@@ -86,9 +86,9 @@ def get_metrics(deps: Deps) -> dict:
 
 
 def feature_importance(deps: Deps, top_n: int = 6) -> dict:
-    """Importance globale (SHAP) des top_n features"""
+    """Importance globale (SHAP) des top_n features — moyennée sur les modèles de fold servis"""
     sample = deps.X.sample(min(500, len(deps.X)), random_state=0)
-    imp = global_importance(deps.pipe, sample)
+    imp = global_importance_folds(deps.fold_models, sample)
     return {_clean(k): round(float(v), 3) for k, v in list(imp.items())[:top_n]}
 
 

@@ -4,6 +4,7 @@ Lancer un entraînement complet :  python -m src.model
 """
 
 import json
+import os
 from datetime import UTC, datetime
 
 import joblib
@@ -27,18 +28,36 @@ COST_FN, COST_FP = 10.0, 1.0
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 
-def _champion_pr_auc(X_test, y_test) -> float | None:
-
-    path = config.MODELS_DIR / "pipeline.joblib"
+def _champion_served_pr_auc(y_all) -> float | None:
+    """PR-AUC des scores servis par le champion (OOF calibré de oof_scores.csv)."""
+    path = config.MODELS_DIR / "oof_scores.csv"
     if not path.exists():
         return None
-    champion = joblib.load(path)
-    return float(average_precision_score(y_test, champion.predict_proba(X_test)[:, 1]))
+    risk = pd.read_csv(path, index_col="machine_id")["risk"].to_numpy()
+    if len(risk) != len(y_all):
+        return None
+    return float(average_precision_score(y_all, risk))
 
 
 def _should_promote(new_pr: float, champion_pr: float | None) -> bool:
     """Promeut le challenger seulement s'il égale ou dépasse le champion (pas de cliquet descendant)."""
     return champion_pr is None or new_pr >= champion_pr
+
+
+def _atomic_write(writers: list) -> None:
+    """Écrit chaque artefact dans un fichier .tmp puis `os.replace` (atomique par fichier)."""
+    staged = []
+    try:
+        for final, write in writers:
+            tmp = final.parent / (final.name + ".tmp")
+            write(tmp)
+            staged.append((tmp, final))
+        for tmp, final in staged:
+            os.replace(tmp, final)
+    except Exception:
+        for tmp, _ in staged:
+            tmp.unlink(missing_ok=True)
+        raise
 
 
 def _log_history(n_trials: int, decision: dict) -> None:
@@ -168,45 +187,43 @@ def run(n_trials: int = 30) -> dict:
             print(f"[mlflow] log_model ignoré : {type(exc).__name__}: {exc}")
 
     config.MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    y_all = df[config.TARGET].to_numpy()
 
-    # Champion / challenger : on ne remplace les artefacts que si le challenger égale/dépasse le
-    # champion.
-    champion_pr = _champion_pr_auc(X_test, y_test)
-    new_pr = xgb_metrics["pr_auc"]
-    promoted = _should_promote(new_pr, champion_pr)
+    raw_oof, fold_of, fold_models = _oof_fold_models(df, best_params)
+    calibrator = PlattCalibrator().fit(raw_oof, y_all)  # un seul calibrateur Platt sur l'OOF
+    cal_oof = calibrator.predict(raw_oof)
+    new_served = float(average_precision_score(y_all, cal_oof))
+    champion_served = _champion_served_pr_auc(y_all)
+    promoted = _should_promote(new_served, champion_served)
     decision = {
         "promoted": promoted,
-        "challenger_pr_auc": round(new_pr, 4),
-        "champion_pr_auc": round(champion_pr, 4) if champion_pr is not None else None,
+        "challenger_pr_auc": round(new_served, 4),  # PR-AUC SERVIE (ce que voit l'utilisateur)
+        "champion_pr_auc": round(champion_served, 4) if champion_served is not None else None,
     }
 
     if promoted:
-        joblib.dump(pipe, config.MODELS_DIR / "pipeline.joblib")  # modèle final
-
-        # 5 fold
-        y_all = df[config.TARGET].to_numpy()
-        raw_oof, fold_of, fold_models = _oof_fold_models(df, best_params)
-
-        # UN seul calibrateur Platt sur les scores OOF
-        calibrator = PlattCalibrator().fit(raw_oof, y_all)
-        cal_oof = calibrator.predict(raw_oof)
-
-        joblib.dump(fold_models, config.MODELS_DIR / "fold_models.joblib")
-        joblib.dump(calibrator, config.MODELS_DIR / "calibrator.joblib")
-        pd.DataFrame({"risk": cal_oof, "raw": raw_oof, "fold": fold_of}, index=df.index).to_csv(
-            config.MODELS_DIR / "oof_scores.csv", index_label="machine_id"
-        )
         results = {
             "baseline": base_metrics,
             "xgboost": xgb_metrics,
+            "served_pr_auc": round(new_served, 4),
             "best_params": best_params,
             "threshold": round(_optimal_threshold(y_all, cal_oof), 3),
             "cost_fn": COST_FN,
             "cost_fp": COST_FP,
         }
-        (config.MODELS_DIR / "metrics.json").write_text(json.dumps(results, indent=2))
+        md = config.MODELS_DIR
+        oof_df = pd.DataFrame({"risk": cal_oof, "raw": raw_oof, "fold": fold_of}, index=df.index)
+        _atomic_write(
+            [
+                (md / "pipeline.joblib", lambda p: joblib.dump(pipe, p)),
+                (md / "fold_models.joblib", lambda p: joblib.dump(fold_models, p)),
+                (md / "calibrator.joblib", lambda p: joblib.dump(calibrator, p)),
+                (md / "oof_scores.csv", lambda p: oof_df.to_csv(p, index_label="machine_id")),
+                (md / "metrics.json", lambda p: p.write_text(json.dumps(results, indent=2))),
+            ]
+        )
     else:
-        # Challenger moins bon
+        # Challenger moins bon que le champion servi : on conserve le champion (aucun écrasement).
         results = json.loads((config.MODELS_DIR / "metrics.json").read_text())
 
     _log_history(n_trials, decision)

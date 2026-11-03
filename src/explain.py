@@ -23,6 +23,19 @@ def global_importance(pipe, X) -> dict[str, float]:
     return dict(sorted(zip(names, importance, strict=False), key=lambda kv: kv[1], reverse=True))
 
 
+def global_importance_folds(models, X) -> dict[str, float]:
+    """Importance globale moyennée sur plusieurs modèles (les 5 modèles de fold servis).
+
+    Cohérence : la vue globale agrège les MÊMES modèles que le SHAP local par relevé.
+    """
+    agg: dict[str, float] = {}
+    for m in models:
+        for name, val in global_importance(m, X).items():
+            agg[name] = agg.get(name, 0.0) + val
+    imp = {name: val / len(models) for name, val in agg.items()}
+    return dict(sorted(imp.items(), key=lambda kv: kv[1], reverse=True))
+
+
 def explain_row(pipe, X_row) -> dict[str, float]:
     """Contribution SHAP de chaque feature pour une seule observation"""
     model = pipe.named_steps["model"]

@@ -7,6 +7,7 @@
     "pr_auc": 0.8998174357754564,
     "roc_auc": 0.9819068931920595
   },
+  "served_pr_auc": 0.872,
   "best_params": {
     "n_estimators": 253,
     "max_depth": 4,

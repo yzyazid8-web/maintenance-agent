@@ -18,7 +18,10 @@ class EpisodicMemory:
     def __init__(self, embed_fn: Embedder | None = None, path=None):
         self._embed_fn = embed_fn  # chargé paresseusement si None
         client = chromadb.PersistentClient(path=str(path or MEMORY_DIR))
-        self.collection = client.get_or_create_collection(COLLECTION)
+        # Espace cosinus.
+        self.collection = client.get_or_create_collection(
+            COLLECTION, metadata={"hnsw:space": "cosine"}
+        )
 
     @property
     def _embed(self) -> Embedder:

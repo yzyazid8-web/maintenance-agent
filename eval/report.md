@@ -1,7 +1,7 @@
 # Évaluation de l'agent
 
 - Généré le **2026-11-03** · commit **a3af015**
-- Jeu de référence : **31 questions** par catégorie · **1 run(s)** (moyenne ± écart-type).
+- Jeu de référence : **31 questions** par catégorie · **1 run** (run unique).
 - Agent évalué : **openai/gpt-oss-120b**.
 - Juge (LLM-as-judge) : **qwen/qwen3.8-27b** — modèle distinct de l'agent.
 - Couverture : **31/31** items évalués (0 exclus pour erreur fournisseur, non comptés contre l'agent).
