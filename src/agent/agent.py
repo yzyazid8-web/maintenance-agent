@@ -5,7 +5,7 @@ from pydantic_ai import Agent, ModelRetry, RunContext
 from src import config
 from src.agent import tools
 from src.agent.llm import build_model
-from src.agent.tools import Deps, build_deps
+from src.agent.tools import Deps
 from src.drift import drift_report, simulate_drift
 
 SYSTEM_PROMPT = (
@@ -26,12 +26,13 @@ SYSTEM_PROMPT = (
     "fonctionnement, pas une machine physique distincte ; le modèle classe un ÉTAT courant, il "
     "n'anticipe pas à un horizon donné). "
     "Tu ne VOIS pas l'interface. Disposition du tableau de bord, de haut en bas : "
-    "les KPIs (métriques globales) ; le tableau « Machines à risque » ; "
-    "le 1er graphe « Ce qui pèse dans les décisions du modèle » = importance globale SHAP "
-    "(outil feature_importance) ; l'inspecteur SHAP par machine (outil explain_prediction) ; "
+    "les KPIs (métriques globales) ; le tableau des relevés à risque ; la courbe de fiabilité "
+    "(calibration) ; le graphe « Ce qui pèse dans les décisions du modèle » = importance globale "
+    "SHAP (outil feature_importance) ; l'inspecteur SHAP par relevé (outil explain_prediction) ; "
     "le panneau « Supervision » de dérive (outil check_drift). "
-    "Quand l'utilisateur désigne un élément visuel (« le premier graphe », « le tableau », "
-    "« le panneau de dérive »…), rattache-le à cet élément et appelle l'outil correspondant. "
+    "Quand l'utilisateur désigne un élément visuel (« le graphe d'importance », « le tableau », "
+    "« la courbe de calibration », « le panneau de dérive »…), rattache-le à cet élément et appelle "
+    "l'outil correspondant. "
     "Pour la CAUSE physique d'une panne et les ACTIONS correctives, appuie-toi sur "
     "diagnose_mode, recommend_actions et explain_mode : ne propose jamais une action qui ne "
     "provient pas du graphe FMEA. "
@@ -198,11 +199,3 @@ def build_agent() -> Agent[Deps, str]:
         return report
 
     return agent
-
-
-def ask(question: str, agent=None, deps=None, message_history=None):
-    """Pose une question à l'agent. Retourne (réponse, messages) pour la continuité multi-tours"""
-    agent = agent or build_agent()
-    deps = deps if deps is not None else build_deps()
-    result = agent.run_sync(question, deps=deps, message_history=message_history)
-    return result.output, result.all_messages()

@@ -5,9 +5,9 @@ import logging
 import sys
 
 from src.agent.agent import build_agent, trim_history
-from src.agent.eval import extract_tool_trace
 from src.agent.guardrails import REFUSAL_MESSAGE, check_input
 from src.agent.tools import build_deps
+from src.agent.trace import extract_tool_trace
 
 TIMEOUT_S = 90
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ def build_chat_model():
     """Retourne une fonction (messages, config) -> str, consommable par mo.ui.chat"""
     agent = build_agent()
     deps = build_deps()
-    state = {"history": None}
+    state: dict[str, list | None] = {"history": None}
 
     async def model(messages, config):
         prompt = messages[-1].content

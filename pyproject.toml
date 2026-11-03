@@ -18,6 +18,7 @@ ignore = ["E501", "B018"]
 [tool.mypy]
 python_version = "3.12"
 ignore_missing_imports = true   # stubs tiers (chromadb, sklearn, xgboost…) absents/partiels
+check_untyped_defs = true       # vérifie aussi le corps des fonctions non annotées
 
 [tool.pytest.ini_options]
 addopts = "-q"

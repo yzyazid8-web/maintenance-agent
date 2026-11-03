@@ -1,58 +1,17 @@
 """Évaluation de l'agent : appels d'outils + exactitude des arguments + refus + groundedness."""
-
-import json
-
 import yaml
 from pydantic import BaseModel, Field
 
 from src import config
+
+# Ré-export : les extracteurs de trace vivent dans un module partagé (chat n'importe plus eval).
+from src.agent.trace import extract_tool_args, extract_tool_calls, extract_tool_trace  # noqa: F401
 
 GOLDEN_PATH = config.ROOT / "eval" / "golden_set.yaml"
 
 
 def load_golden_set(path=GOLDEN_PATH) -> list[dict]:
     return yaml.safe_load(path.read_text(encoding="utf-8"))
-
-
-def _is_call(part) -> bool:
-    return getattr(part, "part_kind", None) == "tool-call" or type(part).__name__ == "ToolCallPart"
-
-
-def extract_tool_calls(messages) -> list[str]:
-    """Noms des outils effectivement APPELÉS (parts 'tool-call'), lus dans l'historique."""
-    return [p.tool_name for m in messages for p in getattr(m, "parts", []) if _is_call(p)]
-
-
-def extract_tool_args(messages) -> list[tuple[str, dict]]:
-    """Couples (nom d'outil, arguments) des appels. Tolère des args en dict ou en JSON."""
-    out = []
-    for m in messages:
-        for p in getattr(m, "parts", []):
-            if not _is_call(p):
-                continue
-            args = getattr(p, "args", None)
-            if isinstance(args, str):
-                try:
-                    args = json.loads(args)
-                except (ValueError, TypeError):
-                    args = {}
-            out.append((p.tool_name, args or {}))
-    return out
-
-
-def extract_tool_trace(messages) -> list[dict]:
-    """Trace (preuves) : appels d'outils ET leurs résultats, pour que le juge puisse vérifier."""
-    trace = []
-    for message in messages:
-        for part in getattr(message, "parts", []):
-            kind = getattr(part, "part_kind", None)
-            if kind == "tool-call" or type(part).__name__ == "ToolCallPart":
-                trace.append({"appel": part.tool_name, "args": str(getattr(part, "args", ""))})
-            elif kind == "tool-return" or type(part).__name__ == "ToolReturnPart":
-                trace.append(
-                    {"resultat_de": part.tool_name, "valeur": str(getattr(part, "content", ""))}
-                )
-    return trace
 
 
 def _flatten(d: dict) -> dict:

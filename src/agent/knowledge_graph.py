@@ -85,6 +85,11 @@ class KnowledgeGraph:
             "sensors": info.get("sensors", []),
         }
 
+    # Règles peu spécifiques (beaucoup de faux positifs) : à signaler pour ne pas sur-interpréter.
+    _LOW_SPECIFICITY = {
+        "TWF": "règle TWF peu spécifique (précision ~0,33 : beaucoup de fausses alertes)"
+    }
+
     def diagnose(self, row) -> dict:
         modes = self.link_modes(row)
         if not modes:
@@ -92,7 +97,11 @@ class KnowledgeGraph:
                 "modes": [],
                 "message": "Aucun mode physique déclenché (risque diffus ou aléatoire).",
             }
-        return {"modes": modes, "details": [self.describe_mode(m) for m in modes]}
+        out = {"modes": modes, "details": [self.describe_mode(m) for m in modes]}
+        caveats = [self._LOW_SPECIFICITY[m] for m in modes if m in self._LOW_SPECIFICITY]
+        if caveats:
+            out["caveats"] = caveats
+        return out
 
     # GraphRAG (récupération sémantique + parcours multi-sauts)
 

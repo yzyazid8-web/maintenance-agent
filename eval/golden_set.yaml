@@ -137,7 +137,7 @@
 # Questions sur l'interface (type 1 : l'agent connaît la disposition) 
 - id: ui_first_graph
   category: interface
-  question: Que montre le premier graphe du tableau de bord ?
+  question: Que montre le graphe d'importance des variables du tableau de bord ?
   expected_tool: feature_importance
 
 - id: ui_meta_supervision
