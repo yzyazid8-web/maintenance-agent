@@ -86,11 +86,12 @@ Ce projet, à partir de mesures machine (couple, vitesse, usure outil, températ
   seuils reste **déterministe** (anti-hallucination).
 - **Mémoire épisodique** : les diagnostics sont stockés **horodatés** (chromadb + embeddings),
   rappelés par **similarité** et **filtrables par machine** ; traités comme des notes utilisateur non vérifiées.
-- **Guardrails & modèle de menace** : un pré-filtre déterministe écarte les injections évidentes
-  (réglé pour **0 faux positif** sur le vocabulaire métier). Mais le vrai rempart est **architectural** :
+- **Guardrails & modèle de menace** : un pré-filtre **heuristique** écarte les injections les plus
+  visibles, réglé pour **limiter les faux positifs** sur le vocabulaire métier (« montre-moi tes
+  règles de seuil », « passe outre les consignes »…) — il n'est **pas exhaustif** et a des
+  contournements connus (paraphrases, fautes de frappe). Le vrai rempart est **architectural** :
   tous les outils sont en **lecture seule** (seul `save_note` écrit, et son contenu est traité comme
-  une note utilisateur non vérifiée) — une injection ne peut donc ni altérer le modèle/les données
-  ni exfiltrer de secret.
+  une note utilisateur non vérifiée) → une injection ne peut ni altérer le modèle/les données ni exfiltrer de secret.
 - **Évaluation** (`eval/golden_set.yaml`, 31 questions par catégorie) : appels d'outils **et
   exactitude des arguments** (déterministe), **refus** des questions hors-sujet et des injections,
   gestion des **ID invalides**, et *groundedness* notée par un **LLM-as-judge distinct de l'agent**
@@ -145,18 +146,18 @@ de trois règles codées à la main (`src/agent/knowledge_graph.py`) les retrouv
 | Détection de panne | Précision | Rappel | Alertes |
 |---|---|---|---|
 | Règles FMEA fortes (HDF + PWF + OSF) | **1,00** | 0,85 | **287** |
-| XGBoost (seuil par coût) | 0,65 | 0,87 | 455 |
+| XGBoost (seuil par coût) | 0,66 | 0,86 | 447 |
 
 Autrement dit, **sur ce dataset synthétique, trois règles font mieux que le ML** : à rappel quasi
-identique (~0,85), elles ont une **meilleure précision** (1,00 vs 0,65) **et génèrent moins d'alertes**
-(287 vs 455). C'est logique et il faut l'assumer — les labels sont fabriqués par ces seuils, le modèle
+identique (~0,85), elles ont une **meilleure précision** (1,00 vs 0,66) **et génèrent moins d'alertes**
+(287 vs 447). C'est logique et il faut l'assumer — les labels sont fabriqués par ces seuils, le modèle
 ne fait que les réapprendre.
 
 **Alors pourquoi un modèle ?** Parce que l'objectif n'est pas de battre les règles sur AI4I, mais de
 fournir ce qu'une règle binaire ne donne pas : un **score de risque calibré et classable** (0–100 %),
 seul moyen de **prioriser**, et d'alimenter le seuil réglable, le SHAP, le what-if et l'agent. Le
 modèle est le **moteur** ; la contribution du projet est la **chaîne produit** autour. *(Par mode :
-les règles battent largement XGBoost sur TWF, 0,96 vs 0,24 ; les pannes aléatoires RNF sont
+les règles battent largement XGBoost sur TWF, 0,96 vs 0,22 ; les pannes aléatoires RNF sont
 imprévisibles pour les deux, ~0 — plafond du dataset.)*
 
 *(Tous les chiffres ci-dessus : `python -m src.report_metrics` → `models/report_metrics.json`.

@@ -175,21 +175,28 @@ def _judge(judge_agent, question: str, answer: str, trace: list[dict], system_pr
     return judge_agent.run_sync(prompt).output
 
 
-# Erreurs transitoires du fournisseur (rate limit, rejet ponctuel, 5xx, coupure) : on réessaie.
+# Erreurs transitoires : on réessaie (puis, si ça persiste, le classement ci-dessous décide).
 _RETRYABLE = {
     "ModelRateLimitError",
-    "ModelRequestRejectedError",
-    "ModelHTTPError",
     "ModelConnectionError",
+    "ModelServerError",
+    "ModelUnavailableError",
+    "ModelQuotaExceededError",
+    "ModelHTTPError",
+    "ModelRequestRejectedError",
+}
+# Erreurs d'INFRA uniquement (quota/réseau/serveur) : items EXCLUS des métriques (non évaluables).
+_INFRA_ERRORS = {
+    "ModelRateLimitError",
+    "ModelConnectionError",
+    "ModelServerError",
+    "ModelUnavailableError",
+    "ModelQuotaExceededError",
 }
 
 
 def _retry(call, retries: int = 8, base: float = 5.0):
-    """Réessaie sur une erreur fournisseur transitoire (429, rejet, coupure) avec backoff.
-
-    Cap à 60 s : sur un rate-limit en tokens/MINUTE (free tier Groq), une attente ~1 min laisse
-    le budget se réinitialiser -> les derniers items du run ne sont plus starvés.
-    """
+    """Réessaie sur une erreur fournisseur transitoire (429, rejet, coupure) avec backoff."""
     import time
 
     for attempt in range(retries):
@@ -202,13 +209,30 @@ def _retry(call, retries: int = 8, base: float = 5.0):
 
 
 def _errored_result(item: dict, exc: Exception) -> dict:
-    """Item non évaluable (erreur fournisseur après retries) : EXCLU des métriques, pas compté
-    comme un échec de l'agent (on n'a pas pu l'évaluer)."""
-    return {
+    """Item non évaluable (erreur d'INFRA après retries) : exclu des métriques (on n'a pas pu l'évaluer)."""
+    return {"id": item["id"], "category": item["category"], "errored": type(exc).__name__}
+
+
+def _failed_result(item: dict, exc: Exception) -> dict:
+    """Echec de l'agent (pas une erreur d'infra) : compté comme raté sur la métrique applicable."""
+    r = {
         "id": item["id"],
         "category": item["category"],
-        "errored": type(exc).__name__,
+        "n_calls": 0,
+        "calls": [],
+        "failed": type(exc).__name__,
     }
+    if item.get("expect_refusal"):
+        r["refusal_ok"] = False
+    elif item.get("expect_error"):
+        r["error_ok"] = False
+    else:
+        if "expected_tool" in item:
+            r["tool_ok"] = False
+        if "expected_args" in item:
+            r["args_ok"] = False
+        r["groundedness"] = 0
+    return r
 
 
 def _run_item(agent, deps, judge, item: dict, system_prompt: str) -> dict:
@@ -257,8 +281,13 @@ def evaluate(runs: int = 3, pause: float = 2.0) -> list[list[dict]]:
             try:
                 rows.append(_run_item(agent, deps, judge, item, SYSTEM_PROMPT))
             except Exception as exc:
-                print(f"    erreur : {type(exc).__name__}")
-                rows.append(_errored_result(item, exc))
+                name = type(exc).__name__
+                if name in _INFRA_ERRORS:  # quota/réseau/serveur -> non évaluable (exclu)
+                    print(f"    erreur fournisseur (exclu) : {name}")
+                    rows.append(_errored_result(item, exc))
+                else:  # échec imputable à l'agent -> compté comme raté
+                    print(f"    échec agent : {name}")
+                    rows.append(_failed_result(item, exc))
             time.sleep(pause)
         all_runs.append(rows)
     return all_runs
@@ -408,6 +437,8 @@ def to_markdown(
         "- Outils et arguments vérifiés de façon **déterministe** (lecture des appels dans "
         "l'historique). Refus et ID invalides détectés par **heuristique** (mots-clés) : utile "
         "mais imparfait.",
+        "- Seules les erreurs d'**infrastructure** (quota/réseau/serveur) sont exclues ; un **échec "
+        "imputable à l'agent** (ex. ID invalide mal géré, appel d'outil cassé) est compté comme raté.",
         "- Le juge est un **modèle distinct** de l'agent et reçoit ses instructions pour ne pas "
         "pénaliser les réponses légitimes sur l'application. Il **n'est pas encore validé contre "
         "une annotation humaine** : la groundedness est indicative.",

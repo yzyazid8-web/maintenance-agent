@@ -1,28 +1,23 @@
-"""Garde-fou d'entrée : pré-filtre LÉGER des injections évidentes, avant d'appeler le LLM."""
+"""Garde-fou d'entrée : pré-filtre heuristique des injections évidentes, avant d'appeler le LLM."""
 
 import re
 from dataclasses import dataclass
 
 MAX_INPUT_CHARS = 2000
 
+# Motifs resserrés : ne ciblent que des tournures d'injection claires .
 _INJECTION_PATTERNS = [
-    r"ignore[rz]?\s+(the|all|your|previous|everything|tout\b|toutes?\s+(les|tes))",
-    r"ignore[rz]?\s+(les|tes|vos)\s+(instructions|consignes|règles|directives)",
+    r"ignore[rz]?\s+(the|all|your|previous|everything|above)",  # EN
+    r"ignore[rz]?\s+(les|tes|vos)\s+(instructions|consignes|règles|directives)",  # FR
     r"oublie[rz]?\s+(tout\b|tes\s+(instructions|consignes|règles)|toutes?\s+tes)",
     r"disregard\s+(the|all|previous|your)",
     r"forget\s+(your|the|all|previous|everything)",
-    r"(ne\s+tiens?\s+plus\s+compte|outrepasse|contourne|passe\s+outre)[^.]{0,20}"
-    r"(instructions|consignes|règles|directives)",
-    r"(reveal|révèle[rz]?|montre[rz]?|affiche[rz]?|divulgue|print|répète|donne)[^.]{0,40}"
-    r"(system[\s-]?prompt|prompt\s+système|tes\s+(instructions|consignes|règles)|"
-    r"ton\s+prompt|your\s+(instructions|prompt|rules|system))",
+    r"(reveal|révèle[rz]?|montre[rz]?|affiche[rz]?|divulgue|print|répète)[^.]{0,40}"
+    r"(system[\s-]?prompt|prompt\s+système|ton\s+prompt)",
     r"tu es (maintenant|désormais)",
-    r"désormais[,\s]+tu\s+(es|dois|vas|réponds)",
     r"you are now",
-    r"act as (a|an|if)",
-    r"agis comme (un|une|si)",
-    r"fais comme si tu",
-    r"aucune\s+(règle|consigne|limite|restriction)",
+    r"act as if",
+    r"agis comme si",
     r"jailbreak",
     r"developer mode",
     r"override[^.]{0,30}(instructions|rules|guardrails|consignes)",
