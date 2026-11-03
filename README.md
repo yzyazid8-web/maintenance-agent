@@ -15,8 +15,8 @@
 
 ## 🎯 L'idée du projet
 
-Le cœur de ce projet **n'est pas le modèle de prévision 'XGBoost' ** , mais il joue le rôle
-de **« moteur »**. Le vrai sujet est de **transformer un modèle ML en produit réellement utilisable**,
+Le cœur de ce projet **n'est pas le modèle XGBoost** — il joue le rôle de **« moteur »**. Le vrai
+sujet est de **transformer un modèle ML en produit réellement utilisable**,
 en **greffant un agent IA directement dans le tableau de bord marimo**.
 
 Au lieu d'un simple dashboard que l'utilisateur doit savoir lire, on peut **lui parler** :
@@ -28,7 +28,7 @@ monitoring), sans rien inventer.
 
 ---
 
-## 
+## 🧰 Ce que le projet met en œuvre
 
 Ce projet, de bout en bout :
 

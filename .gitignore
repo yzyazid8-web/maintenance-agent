@@ -39,6 +39,9 @@ htmlcov/
 # --- Export marimo de vérification ---
 _test.html
 
+# --- Journal des réentraînements (local, dépend des runs) ---
+models/history.jsonl
+
 # --- OS / IDE ---
 .DS_Store
 Thumbs.db
