@@ -68,7 +68,7 @@ def _model_for(deps: Deps, machine_id: int) -> Pipeline:
 
 
 def get_metrics(deps: Deps) -> dict:
-    
+
     m = deps.metrics["xgboost"]
     served = float(average_precision_score(deps.scored[config.TARGET], deps.scored["risk"]))
     out: dict[str, object] = {
@@ -81,9 +81,7 @@ def get_metrics(deps: Deps) -> dict:
         mo = json.loads(rp.read_text())["model"]
         out["pr_auc_cv"] = f"{mo['pr_auc_cv_mean']} ± {mo['pr_auc_cv_std']}"
         out["pr_auc_ic95_test"] = mo["pr_auc_test_ci95"]
-        out["pr_auc_ordre_arrivee"] = mo[
-            "pr_auc_temporal"
-        ]  # proxy déploiement temporel
+        out["pr_auc_ordre_arrivee"] = mo["pr_auc_temporal"]  # proxy déploiement temporel
     return out
 
 
