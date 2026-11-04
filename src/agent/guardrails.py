@@ -1,6 +1,6 @@
 """Garde-fou d'entrée : pré-filtre HEURISTIQUE des injections évidentes, avant d'appeler le LLM.
 
-Non exhaustif et ne prétend pas l'être. """
+Non exhaustif et ne prétend pas l'être."""
 
 import re
 import unicodedata

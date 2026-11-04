@@ -228,13 +228,15 @@ pytest -q                    # tests
 
 ## 🚀 Déploiement
 
-L'application est **conteneurisée** (`Dockerfile`) et la **CI construit l'image** à chaque push
-(preuve de reproductibilité). Elle n'est pas hébergée en continu (choix de gratuité), mais se lance
-en une commande en local ou via Docker :
+L'application est **conteneurisée** et **reproductible** : dépendances figées en closure transitive
+(`requirements.lock`, via `pip-compile`), **Python épinglé** (3.12.2), et **embedder pré-téléchargé
+dans l'image** → conteneur **autonome** (aucun téléchargement au premier appel, fonctionne hors-ligne).
+La CI ne se contente pas de **construire** l'image : elle la **démarre et vérifie qu'elle sert le
+dashboard** (smoke test). Non hébergée en continu (choix de gratuité), mais se lance en une commande :
 
 ```bash
 docker build -t maintenance-agent .
-docker run -p 7860:7860 -e GROQ_API_KEY=gsk_... maintenance-agent
+docker run -p 7860:7860 --env-file .env maintenance-agent   # --env-file évite la clé dans l'historique shell
 ```
 
 ---

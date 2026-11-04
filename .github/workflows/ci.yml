@@ -17,7 +17,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.12.2"
           cache: pip
 
       - name: Install dependencies
@@ -37,11 +37,23 @@ jobs:
       - name: Tests (pytest + couverture)
         run: pytest -q --cov=src --cov-report=term-missing
 
-  # 2 Build Docker : ne tourne que si "quality" passe. Détecte un Dockerfile cassé avant la prod.
+  # 2 Build Docker + SMOKE TEST : ne tourne que si "quality" passe. Prouve que « ça se lance
+  #   en une commande » (on ne se contente pas de builder l'image, on la démarre).
   docker-build:
     needs: quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build image (smoke test)
+      - name: Build image
         run: docker build -t maintenance-agent:ci .
+      - name: Smoke test (le conteneur démarre et sert le dashboard)
+        run: |
+          docker run -d -p 7860:7860 --name mapp maintenance-agent:ci
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:7860 >/dev/null && { echo "OK après $((i*3))s"; break; }
+            sleep 3
+          done
+          if ! curl -fsS http://localhost:7860 >/dev/null; then
+            echo "ÉCHEC : le conteneur ne répond pas sur :7860"; docker logs mapp; docker rm -f mapp; exit 1
+          fi
+          docker rm -f mapp
