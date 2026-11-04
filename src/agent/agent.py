@@ -64,7 +64,7 @@ def unknown_overrides(overrides) -> list[str]:
 
 MAX_HISTORY_TURNS = 6  # bornage : on ne renvoie au LLM que les N derniers tours
 MEMORY_MAX_DISTANCE = 0.6  # distance cosinus max pour qu'une note mémoire soit jugée pertinente
-
+MAX_NOTE_CHARS = 500  # borne la taille d'une note mémorisée 
 
 def _is_user_turn(message) -> bool:
     return any(
@@ -170,8 +170,13 @@ def build_agent() -> Agent[Deps, str]:
     def save_note(ctx: RunContext[Deps], text: str, machine_id: int | None = None) -> dict:
         """Mémorise un diagnostic / une observation (horodaté). Précise machine_id si la note
         concerne une machine précise, pour pouvoir la retrouver par machine ensuite."""
+        note = (text or "").strip()[
+            :MAX_NOTE_CHARS
+        ]  # borne : limite l'injection indirecte via mémoire
+        if not note:
+            raise ModelRetry("La note est vide.")
         meta = {"machine_id": machine_id} if machine_id is not None else None
-        return {"saved": True, "id": ctx.deps.memory.remember(text, meta)}
+        return {"saved": True, "id": ctx.deps.memory.remember(note, meta)}
 
     @agent.tool
     def recall_memory(

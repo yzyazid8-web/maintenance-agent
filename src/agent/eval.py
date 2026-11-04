@@ -191,7 +191,7 @@ def _failed_result(item: dict, exc: Exception) -> dict:
             r["tool_ok"] = False
         if "expected_args" in item:
             r["args_ok"] = False
-        r["groundedness"] = 0
+        # pas de groundedness : un échec n'est pas une note de 0 sur l'échelle 1-5 (on l'exclut)
     return r
 
 
@@ -284,12 +284,15 @@ def _run_rate(rows, key):
 
 
 def _git_commit() -> str:
-    """Commit court courant (best-effort, 'n/a' si git indisponible)."""
+    """Commit court courant + suffixe `-dirty` si l'arbre de travail est modifié (best-effort)."""
     import subprocess
 
     try:
         out = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, timeout=5
+            ["git", "describe", "--always", "--dirty", "--abbrev=7"],
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         return out.stdout.strip() or "n/a"
     except Exception:
@@ -394,6 +397,19 @@ def to_markdown(
         calls = ", ".join(r.get("calls", [])) or "—"
         lines.append(f"| {r['id']} | {r['category']} | {calls} | {' · '.join(verdict)} |")
 
+    # Analyse des échecs :
+    problems = []
+    for r in all_runs[0]:
+        reasons = [k for k in ("tool_ok", "args_ok", "refusal_ok", "error_ok") if r.get(k) is False]
+        if isinstance(r.get("groundedness"), int) and r["groundedness"] <= 3:
+            reasons.append(f"groundedness {r['groundedness']}/5")
+        if "failed" in r:
+            reasons.append(f"exception {r['failed']}")
+        if reasons:
+            problems.append(f"- **{r['id']}** ({r['category']}) : {', '.join(reasons)}")
+    lines += ["", "## Analyse des échecs", ""]
+    lines += problems if problems else ["- Aucun échec ni groundedness faible sur ce run."]
+
     lines += [
         "",
         "## Méthodologie & limites",
@@ -403,6 +419,9 @@ def to_markdown(
         "mais imparfait.",
         "- Seules les erreurs d'**infrastructure** (quota/réseau/serveur) sont exclues ; un **échec "
         "imputable à l'agent** (ex. ID invalide mal géré, appel d'outil cassé) est compté comme raté.",
+        "- L'éval appelle l'agent **directement** (sans le pré-filtre guardrail ni le bornage "
+        "d'historique) : les items `injection` mesurent donc le LLM **seul** ; le guardrail déployé "
+        "est testé à part (`tests/test_guardrails.py`, `tests/test_agent_chain.py`).",
         "- Le juge est un **modèle distinct** de l'agent et reçoit ses instructions pour ne pas "
         "pénaliser les réponses légitimes sur l'application. Il **n'est pas encore validé contre "
         "une annotation humaine** : la groundedness est indicative.",
@@ -417,7 +436,7 @@ if __name__ == "__main__":
 
     from src.agent.llm import resolve_agent, resolve_judge
 
-    runs = int(os.environ.get("EVAL_RUNS", "3"))
+    runs = int(os.environ.get("EVAL_RUNS", "1"))  # 1 par défaut ; EVAL_RUNS=n pour plus
     report = to_markdown(
         evaluate(runs=runs),
         judge_model=resolve_judge()[0],

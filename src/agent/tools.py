@@ -28,6 +28,7 @@ class Deps:
     memory: EpisodicMemory  # mémoire
     calibrator: PlattCalibrator  # score brut -> probabilité calibrée
     fold_models: list[Pipeline]  # 5 modèles de fold (ligne i scorée par celui qui ne l'a pas vue)
+    global_imp: dict | None = None  # cache de l'importance SHAP globale 
 
 
 def build_deps() -> Deps:
@@ -87,8 +88,11 @@ def get_metrics(deps: Deps) -> dict:
 
 def feature_importance(deps: Deps, top_n: int = 6) -> dict:
     """Importance globale (SHAP) des top_n features — moyennée sur les modèles de fold servis"""
-    sample = deps.X.sample(min(500, len(deps.X)), random_state=0)
-    imp = global_importance_folds(deps.fold_models, sample)
+    imp = deps.global_imp
+    if imp is None:  # calcul coûteux : mémorisé sur deps (1 fois par session)
+        sample = deps.X.sample(min(500, len(deps.X)), random_state=0)
+        imp = global_importance_folds(deps.fold_models, sample)
+        deps.global_imp = imp
     return {_clean(k): round(float(v), 3) for k, v in list(imp.items())[:top_n]}
 
 

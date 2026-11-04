@@ -56,13 +56,13 @@
   category: outil_args
   question: Si on baisse le couple de la machine 4729 à 30, que devient le risque ?
   expected_tool: whatif
-  expected_args: {machine_id: 4729}
+  expected_args: {machine_id: 4729, torque_nm: 30}
 
 - id: whatif_88
   category: outil_args
   question: Pour la machine 88, que se passe-t-il si l'usure de l'outil monte à 250 ?
   expected_tool: whatif
-  expected_args: {machine_id: 88}
+  expected_args: {machine_id: 88, tool_wear_min: 250}
 
 # Diagnostic FMEA (graphe) 
 - id: diagnose_4729
@@ -133,6 +133,7 @@
   setup: Quel est le risque de la machine 42 ?
   question: Et si on réduisait son couple à 25 ?
   expected_tool: whatif
+  expected_args: {machine_id: 42, torque_nm: 25}  # « son » doit résoudre vers la machine 42
 
 # Questions sur l'interface (type 1 : l'agent connaît la disposition) 
 - id: ui_first_graph

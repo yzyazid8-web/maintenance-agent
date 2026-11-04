@@ -36,6 +36,8 @@ def build_chat_model():
         prompt = messages[-1].content
         if not check_input(prompt).allowed:  # refus déterministe, sans appeler le LLM
             return REFUSAL_MESSAGE
+        if len(messages) == 1:  # l'utilisateur a réinitialisé la conversation dans l'UI
+            state["history"] = None
         # On ne renvoie au LLM que les derniers tours -> borne la consommation de tokens
         history = trim_history(state["history"]) if state["history"] else None
         try:
