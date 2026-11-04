@@ -85,7 +85,7 @@ def simulate_drift(df, severity: float = 1.0, seed: int = 0):
     out["tool_wear_min"] = out["tool_wear_min"] + severity * 40
     out["torque_nm"] = out["torque_nm"] * (1 + severity * 0.15)
     out["process_temp_k"] = out["process_temp_k"] + severity * rng.normal(1.0, 0.3, len(out))
-    
+
     if "type" in out.columns and severity > 0:
         n_flip = int(min(0.5, 0.15 * severity) * len(out))
         if n_flip:

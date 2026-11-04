@@ -64,7 +64,8 @@ def unknown_overrides(overrides) -> list[str]:
 
 MAX_HISTORY_TURNS = 6  # bornage : on ne renvoie au LLM que les N derniers tours
 MEMORY_MAX_DISTANCE = 0.6  # distance cosinus max pour qu'une note mémoire soit jugée pertinente
-MAX_NOTE_CHARS = 500  # borne la taille d'une note mémorisée 
+MAX_NOTE_CHARS = 500  # borne la taille d'une note mémorisée
+
 
 def _is_user_turn(message) -> bool:
     return any(

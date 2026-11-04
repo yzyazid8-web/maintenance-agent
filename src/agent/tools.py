@@ -28,7 +28,7 @@ class Deps:
     memory: EpisodicMemory  # mémoire
     calibrator: PlattCalibrator  # score brut -> probabilité calibrée
     fold_models: list[Pipeline]  # 5 modèles de fold (ligne i scorée par celui qui ne l'a pas vue)
-    global_imp: dict | None = None  # cache de l'importance SHAP globale 
+    global_imp: dict | None = None  # cache de l'importance SHAP globale
 
 
 def build_deps() -> Deps:
