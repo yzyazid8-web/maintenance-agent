@@ -85,18 +85,35 @@ def _(df):
 
 @app.cell
 def _(mo):
-    mo.md(
+    # Thème léger : couleur d'accent sur les titres de section (clair/sombre).
+    mo.Html(
+        "<style>"
+        "h1, h2, h3 { color: #2f86e0; }"
+        "h2 { border-bottom: 2px solid rgba(47, 134, 224, 0.25); padding-bottom: 0.2rem; }"
+        "</style>"
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    _title = mo.md(
         """
         # 🔧 Maintenance prédictive — tableau de bord
 
         Estimation du risque de panne de machines-outils (XGBoost), avec explicabilité SHAP,
         diagnostic des modes de panne (FMEA) et surveillance de la dérive des données.
         L'assistant IA est dans le panneau de gauche.
-
-        _Chaque ligne est un **relevé** (point de fonctionnement), pas une machine distincte ; le
-        modèle **classe un état courant** à partir des capteurs — il n'anticipe pas à un horizon donné._
         """
     )
+    _note = mo.callout(
+        mo.md(
+            "Chaque ligne est un **relevé** (point de fonctionnement), pas une machine distincte ; "
+            "le modèle **classe un état courant** à partir des capteurs — il n'anticipe pas à un horizon donné."
+        ),
+        kind="info",
+    )
+    mo.vstack([_title, _note])
     return
 
 
@@ -179,11 +196,18 @@ def _(metrics, mo, report_metrics, scored, threshold):
     )
     mo.hstack(
         [
-            mo.stat(f"{len(scored):,}", label="Relevés"),
-            mo.stat(f"{scored['machine_failure'].mean():.1%}", label="Taux de panne réel"),
-            mo.stat(f"{_served:.2f}", label="PR-AUC (servie, OOF)", caption=_cap),
-            mo.stat(f"{metrics['xgboost']['roc_auc']:.2f}", label="ROC-AUC (test)"),
-            mo.stat(f"{flagged:,}", label=f"Signalés (≥ {threshold.value:.2f})"),
+            mo.stat(f"{len(scored):,}", label="Relevés", bordered=True),
+            mo.stat(
+                f"{scored['machine_failure'].mean():.1%}", label="Taux de panne réel", bordered=True
+            ),
+            mo.stat(f"{_served:.2f}", label="PR-AUC (servie, OOF)", caption=_cap, bordered=True),
+            mo.stat(f"{metrics['xgboost']['roc_auc']:.2f}", label="ROC-AUC (test)", bordered=True),
+            mo.stat(
+                f"{flagged:,}",
+                label=f"Signalés (≥ {threshold.value:.2f})",
+                caption="à prioriser",
+                bordered=True,
+            ),
         ],
         justify="start",
         gap=1.5,
@@ -343,9 +367,13 @@ def _(NUMERIC_FEATURES, X, drift_report, mo, pd, run_drift, severity, simulate_d
             )
             or "—"
         )
+        _kind = "danger" if "🔴" in _verdict else "warn" if "🟡" in _verdict else "success"
         _out = mo.vstack(
             [
-                mo.md(f"**Dérive globale (AUC domain classifier) : {_auc:.2f} → {_verdict}**"),
+                mo.callout(
+                    mo.md(f"**Dérive globale (AUC domain classifier) : {_auc:.2f} → {_verdict}**"),
+                    kind=_kind,
+                ),
                 mo.ui.table(pd.DataFrame(_report["per_feature"]), page_size=5),
                 mo.md(f"**Catégorielles (χ²)** : {_cat}"),
             ]
@@ -394,23 +422,32 @@ def _(mo, run_retrain):
             _res = run_training(n_trials=10)
             _p = _res["promotion"]
             if _p["promoted"]:
-                _out = mo.md(
-                    f"✅ Challenger **promu** — PR-AUC {_p['challenger_pr_auc']:.3f} "
-                    f"(champion précédent : {_p['champion_pr_auc']}).\n\n"
-                    "_Recharge l'app pour servir le nouveau modèle._"
+                _out = mo.callout(
+                    mo.md(
+                        f"✅ Challenger **promu** — PR-AUC {_p['challenger_pr_auc']:.3f} "
+                        f"(champion précédent : {_p['champion_pr_auc']}).\n\n"
+                        "_Recharge l'app pour servir le nouveau modèle._"
+                    ),
+                    kind="success",
                 )
             else:
-                _out = mo.md(
-                    f"🛟 Challenger **conservé au banc** (PR-AUC {_p['challenger_pr_auc']:.3f} "
-                    f"< champion {_p['champion_pr_auc']:.3f}) : le modèle en production est **inchangé**. "
-                    "C'est le garde-fou champion/challenger."
+                _out = mo.callout(
+                    mo.md(
+                        f"🛟 Challenger **conservé au banc** (PR-AUC {_p['challenger_pr_auc']:.3f} "
+                        f"< champion {_p['champion_pr_auc']:.3f}) : le modèle en production est "
+                        "**inchangé**. C'est le garde-fou champion/challenger."
+                    ),
+                    kind="warn",
                 )
         except ModuleNotFoundError as _e:
-            _out = mo.md(
-                "⚠️ Réentraînement indisponible ici : les dépendances d'entraînement "
-                "(`optuna`, `mlflow`) ne sont pas installées dans cet environnement. "
-                "Installe-les avec `pip install -r requirements-dev.txt`.\n\n"
-                f"`{_e}`"
+            _out = mo.callout(
+                mo.md(
+                    "⚠️ Réentraînement indisponible ici : les dépendances d'entraînement "
+                    "(`optuna`, `mlflow`) ne sont pas installées dans cet environnement. "
+                    "Installe-les avec `pip install -r requirements-dev.txt`.\n\n"
+                    f"`{_e}`"
+                ),
+                kind="danger",
             )
     _out
     return
