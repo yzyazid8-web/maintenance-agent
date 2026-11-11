@@ -5,7 +5,7 @@
 > diagnostique les causes via un **knowledge graph**, garde une **mémoire** des diagnostics et
 > surveille la **dérive des données**.
 
-**Stack :** Python · marimo · XGBoost · SHAP · Pydantic AI (Groq / Ollama) · chromadb · NetworkX · MLflow · Docker · GitHub Actions
+**Stack :** Python · marimo · XGBoost · SHAP · Pydantic AI (Groq / Ollama) · chromadb · NetworkX · MLflow · Docker · GitHub Actions · Azure Container Apps
 
 <!-- Ajoute ici une capture d'écran ou un GIF de démo :
 ![Démo](assets/demo.gif)
@@ -37,7 +37,8 @@ Ce projet, de bout en bout :
 - **MLOps** : détection de **dérive** (PSI, Wasserstein, domain classifier, χ² sur `type`),
   réentraînement avec garde-fou **champion/challenger** (le challenger n'est promu que s'il **égale
   ou dépasse** le champion **rescoré sur le même jeu de test** ; chaque run journalisé), suivi
-  **MLflow**, **Docker**, **CI** GitHub Actions (ruff + mypy + tests + build).
+  **MLflow**, **Docker**, **CI** GitHub Actions (ruff + mypy + tests + build + smoke test), et
+  **déploiement** en ligne sur **Azure Container Apps** (image publiée sur GHCR, secret managé, scale-to-zero).
 - **ML & explicabilité** : XGBoost sur données déséquilibrées, **SHAP** (global + local). Pour une
   machine donnée, le **risque, le SHAP et le what-if proviennent du même modèle hors-échantillon**
   (le modèle du fold qui ne l'a pas vue) — pas de contradiction entre ce qui est affiché et ce qui est expliqué.
@@ -105,17 +106,92 @@ Ce projet, à partir de mesures machine (couple, vitesse, usure outil, températ
 ## 🏗️ Architecture
 
 ```mermaid
-flowchart LR
-    U([Utilisateur]) --> DASH
-    subgraph APP["Tableau de bord marimo"]
-      DASH[KPIs - table risques - SHAP - supervision]
-      AG[Agent IA a outils]
-    end
-    AG -->|outils| MODEL[XGBoost + SHAP]
-    AG -->|GraphRAG| KG[(Knowledge Graph FMEA)]
-    AG -->|memoire| MEM[(chromadb)]
-    AG -->|LLM| LLM[Groq gpt-oss-120b / Ollama]
-    MODEL --> DATA[(AI4I 2020)]
+flowchart TD
+
+subgraph group_interface["Tableau de bord"]
+  node_dashboard["Dashboard marimo<br/>[app.py]"]
+  node_chat["Chat UI<br/>[chat.py]"]
+end
+
+subgraph group_assistant["Agent conversationnel"]
+  node_agent["Agent à outils<br/>[agent.py]"]
+  node_guardrails["Guardrails<br/>[guardrails.py]"]
+  node_tools["Outils métier<br/>[tools.py]"]
+  node_trace["Traces agent<br/>[trace.py]"]
+  node_llm["Routage LLM<br/>[llm.py]"]
+  node_eval["Évaluation agent<br/>[eval.py]"]
+end
+
+subgraph group_ml["Données et modèle"]
+  node_data["Chargement AI4I<br/>[data.py]"]
+  node_dataset[("Relevés AI4I<br/>[ai4i2020.csv]")]
+  node_features["Features physiques<br/>[features.py]"]
+  node_model["Entraînement XGBoost<br/>[model.py]"]
+  node_calibration["Calibration Platt<br/>[calibration.py]"]
+  node_explain["Explications SHAP<br/>[explain.py]"]
+end
+
+subgraph group_diagnostic["Diagnostic FMEA"]
+  node_kg[("Knowledge graph FMEA<br/>[knowledge_graph.py]")]
+  node_embeddings["Embeddings<br/>[embeddings.py]"]
+  node_memory[("Mémoire épisodique<br/>[memory.py]")]
+end
+
+subgraph group_ops["Supervision et MLOps"]
+  node_drift["Détection de dérive<br/>[drift.py]"]
+  node_retrain["Promotion challenger<br/>[model.py]"]
+end
+
+subgraph group_deploy["Déploiement"]
+  node_docker["Image Docker<br/>[Dockerfile]"]
+  node_ghcr[("GHCR")]
+  node_azure{{"Azure Container Apps"}}
+end
+
+node_user(("Utilisateur"))
+node_llm_service{{"Groq / Ollama"}}
+
+node_user -->|"utilise"| node_dashboard
+node_dashboard -->|"affiche"| node_chat
+node_chat -->|"délègue"| node_agent
+node_chat -->|"filtre"| node_guardrails
+node_chat -->|"trace"| node_trace
+node_agent -->|"enregistre"| node_tools
+node_agent -->|"construit le client LLM"| node_llm
+node_llm -->|"route requêtes"| node_llm_service
+node_agent -->|"évalué par"| node_eval
+node_tools -->|"charge"| node_data
+node_data -->|"lit"| node_dataset
+node_model -->|"entraîne sur"| node_data
+node_model -->|"construit pipeline"| node_features
+node_model -->|"calibre scores"| node_calibration
+node_tools -->|"calcule SHAP"| node_explain
+node_tools -->|"calibre what-if"| node_calibration
+node_tools -->|"diagnostique"| node_kg
+node_tools -->|"lit et écrit"| node_memory
+node_kg -->|"récupère sémantiquement"| node_embeddings
+node_memory -->|"vectorise épisodes"| node_embeddings
+node_dashboard -->|"analyse dérive"| node_drift
+node_dashboard -->|"demande réentraînement"| node_model
+node_dashboard -->|"affiche SHAP"| node_explain
+node_dashboard -->|"charge relevés"| node_data
+node_eval -->|"utilise juge"| node_llm
+node_dashboard -->|"empaquetée dans"| node_docker
+node_docker -->|"CI : build + push"| node_ghcr
+node_ghcr -->|"déployée sur"| node_azure
+
+classDef toneBlue fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#172554
+classDef toneAmber fill:#fef3c7,stroke:#d97706,stroke-width:1.5px,color:#78350f
+classDef toneMint fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#14532d
+classDef toneRose fill:#ffe4e6,stroke:#e11d48,stroke-width:1.5px,color:#881337
+classDef toneIndigo fill:#e0e7ff,stroke:#4f46e5,stroke-width:1.5px,color:#312e81
+classDef toneTeal fill:#ccfbf1,stroke:#0f766e,stroke-width:1.5px,color:#134e4a
+class node_dashboard,node_chat toneBlue
+class node_agent,node_guardrails,node_tools,node_trace,node_llm,node_eval toneAmber
+class node_data,node_dataset,node_features,node_model,node_calibration,node_explain toneMint
+class node_kg,node_embeddings,node_memory toneRose
+class node_drift,node_retrain,node_user,node_llm_service toneIndigo
+class node_docker,node_ghcr,node_azure toneTeal
 ```
 
 ---
@@ -190,7 +266,9 @@ src/
 knowledge/failure_modes.yaml   ontologie des modes de panne
 models/                    artefacts entraînés (pipeline + métriques)
 tests/                     tests unitaires (pytest)
-Dockerfile, .github/workflows/ci.yml   conteneurisation + CI
+Dockerfile                     image conteneur (autonome, embedder pré-téléchargé)
+.github/workflows/ci.yml       CI : lint + typage + tests + build + smoke test
+.github/workflows/deploy.yml   build + push de l'image vers GHCR (déploiement Azure)
 ```
 
 ---
@@ -228,11 +306,21 @@ pytest -q                    # tests
 
 ## 🚀 Déploiement
 
+**🌐 Démo en ligne : [Azure Container Apps](https://maintenance-agent.politebeach-befb1bc3.francecentral.azurecontainerapps.io/)**
+*(hébergée en scale-to-zero : le tout premier accès prend ~30-60 s, le temps que le conteneur se réveille).*
+
 L'application est **conteneurisée** et **reproductible** : dépendances figées en closure transitive
 (`requirements.lock`, via `pip-compile`), **Python épinglé** (3.12.2), et **embedder pré-téléchargé
 dans l'image** → conteneur **autonome** (aucun téléchargement au premier appel, fonctionne hors-ligne).
 La CI ne se contente pas de **construire** l'image : elle la **démarre et vérifie qu'elle sert le
-dashboard** (smoke test). Non hébergée en continu (choix de gratuité), mais se lance en une commande :
+dashboard** (smoke test).
+
+**Chaîne de déploiement (100 % gratuit) :** un workflow GitHub Actions (`.github/workflows/deploy.yml`)
+construit l'image et la publie sur **GHCR** ; **Azure Container Apps** la tire et la sert derrière une
+URL HTTPS, en *scale-to-zero* pour rester dans le quota mensuel offert. La clé LLM est injectée comme
+**secret** côté Azure, jamais dans l'image ni le dépôt.
+
+Et en local, ça se lance en une commande :
 
 ```bash
 docker build -t maintenance-agent .
