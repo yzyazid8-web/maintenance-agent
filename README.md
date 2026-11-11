@@ -5,6 +5,8 @@
 > diagnostique les causes via un **knowledge graph**, garde une **mémoire** des diagnostics et
 > surveille la **dérive des données**.
 
+**🌐 Démo en ligne : [maintenance-agent sur Azure](https://maintenance-agent.politebeach-befb1bc3.francecentral.azurecontainerapps.io/)** — *premier accès ~30-60 s (scale-to-zero).*
+
 **Stack :** Python · marimo · XGBoost · SHAP · Pydantic AI (Groq / Ollama) · chromadb · NetworkX · MLflow · Docker · GitHub Actions · Azure Container Apps
 
 <!-- Ajoute ici une capture d'écran ou un GIF de démo :
@@ -308,6 +310,12 @@ pytest -q                    # tests
 
 **🌐 Démo en ligne : [Azure Container Apps](https://maintenance-agent.politebeach-befb1bc3.francecentral.azurecontainerapps.io/)**
 *(hébergée en scale-to-zero : le tout premier accès prend ~30-60 s, le temps que le conteneur se réveille).*
+
+**Pour tester l'agent** (ces questions sont aussi proposées en un clic dans l'app) :
+- « À quoi sert cette application et comment la lire ? » — *l'agent explique le tableau de bord lui-même*
+- « Que montre la courbe de calibration (fiabilité) ? »
+- « Quelles sont les 5 machines les plus à risque ? »
+- « Diagnostique la machine la plus à risque et propose des actions. »
 
 L'application est **conteneurisée** et **reproductible** : dépendances figées en closure transitive
 (`requirements.lock`, via `pip-compile`), **Python épinglé** (3.12.2), et **embedder pré-téléchargé

@@ -133,10 +133,10 @@ def _(mo):
         _assistant = mo.ui.chat(
             build_chat_model(),
             prompts=[
-                "À quoi sert cette application ?",
+                "À quoi sert cette application et comment la lire ?",
+                "Que montre la courbe de calibration (fiabilité) ?",
                 "Quelles sont les 5 machines les plus à risque ?",
                 "Diagnostique la machine la plus à risque et propose des actions.",
-                "Simule une dérive à sévérité 1 : est-elle détectée ?",
             ],
         )
         _out = mo.vstack([mo.md("### 🤖 Assistant"), _assistant])
