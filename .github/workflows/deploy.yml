@@ -1,0 +1,44 @@
+name: Deploy image (GHCR)
+
+# Construit l'image Docker et la pousse sur GitHub Container Registry (GHCR).
+# Volontairement SÉPARÉ de la CI : l'image est lourde (torch + embedder), on ne
+# la reconstruit pas à chaque push. Déclenchement manuel ou à chaque release.
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Nom d'image en minuscules (requis par GHCR)
+        id: meta
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Connexion à GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build + push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.image }}:latest
+            ${{ steps.meta.outputs.image }}:${{ github.sha }}
+
+      - name: Récapitulatif
+        run: |
+          echo "Image poussée : ${{ steps.meta.outputs.image }}:latest" >> "$GITHUB_STEP_SUMMARY"
+          echo "Déploiement Azure : voir DEPLOY_AZURE.md" >> "$GITHUB_STEP_SUMMARY"
